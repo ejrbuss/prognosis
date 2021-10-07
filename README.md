@@ -1,82 +1,65 @@
-# prognosis
+# prognosis README
 
-## Commands
-```sh
-# view a help message
-$ prognosis -h | --help
+This is the README for your extension "prognosis". After writing up a brief description, we recommend including the following sections.
 
-# view the version number
-prognosis -v | --version
+## Features
 
-# create a new project in the current repository
-$ progonosis new
+Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
 
-# start the development server for a project
-$ prognosis start
+For example if there is an image subfolder under your extension project workspace:
 
-# create a release build of a project
-$ prognosis build
+\!\[feature X\]\(images/feature-x.png\)
 
-# rrun a release build of a project
-$ prognosis run
-```
+> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
 
-## Systems
-```ts
-interface Project {
-    name: string,
-    version: string,
-    author: string,
-    initialScene: Scene,
-}
+## Requirements
 
-interface Display {
-    resolution?: [number, number],
-    aspectRation?: [number, number],
-    dynamicResolution?: boolean,
-    dynamicAspectRation?: boolean,
-    background?: Color,
-    unit: Unit,
-}
+If you have any requirements or dependencies, add a section describing those and how to install and configure them.
 
-interface Entity {
-    id: number,
-    // ... components
-}
+## Extension Settings
 
-interface Group {
-    ids: number[],
-}
+Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
 
-interface SpriteComponents { ... }
-interface PhysicsComponents { ... }
-interface AudioComponents { ... }
-interface AnimationComponents { ... }
+For example:
 
-type Behaviour = (event: Event, entites: Entity[]): void,
+This extension contributes the following settings:
 
-interface Scene {
-    layers: Layer[],
-    effects: Effect[],
-}
+* `myExtension.enable`: enable/disable this extension
+* `myExtension.thing`: set to `blah` to do something
 
-interface Layer {
-    name: string,
-    visible: boolean,
-    opacity: number,
-    blendMode: BlendMode,
-    effects: Effect[],
-    transform: Matrix,
-    background: Color,
-    renderToTexture?: boolean,
-    texture?: Textrue,
-    entities: Entity[],
-    behaviours: Behaviour[],
-}
+## Known Issues
 
-interface Timeline {
-    startComponents: {},
-    endComponents: {},
-    entityPredicate: EntityPredicate,
-}
-```
+Calling out known issues can help limit users opening duplicate issues against your extension.
+
+## Release Notes
+
+Users appreciate release notes as you update your extension.
+
+### 1.0.0
+
+Initial release of ...
+
+### 1.0.1
+
+Fixed issue #.
+
+### 1.1.0
+
+Added features X, Y, and Z.
+
+-----------------------------------------------------------------------------------------------------------
+
+## Working with Markdown
+
+**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
+
+* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
+* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
+* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (macOS) to see a list of Markdown snippets
+
+### For more information
+
+* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
+* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+
+**Enjoy!**

@@ -1,0 +1,114 @@
+{
+	"project": {
+		"title": "Test Game",
+		"author": "ejrbuss",
+		"initialScene": "Main"
+	},
+	"graphics": {
+		"width": 720,
+		"height": 480,
+		"antiAlias": false
+	},
+	"scenes": [
+		{
+			"name": "Main",
+			"camera": {
+				"position": {
+					"x": 0,
+					"y": 0,
+					"z": 0
+				},
+				"rotation": 0,
+				"scale": {
+					"x": 1,
+					"y": 1
+				}
+			},
+			"layers": ["Main"]
+		}
+	],
+	"layers": [
+		{
+			"name": "Main",
+			"inWorldSpace": false,
+			"gameObjects": [
+				"TheBlueBox",
+				"Snoopy"
+			]
+		}
+	],
+	"gameObjects": [
+		{
+			"name": "TheBlueBox",
+			"visible": true,
+			"position": {
+				"x": 0,
+				"y": 0,
+				"z": 0
+			},
+			"rectangleBounds": {
+				"width": 80,
+				"height": 40,
+				"offset": {
+					"x": 0,
+					"y": 0
+				}
+			},
+			"color": {
+				"red": 0,
+				"green": 0.1,
+				"blue": 0.9,
+				"alpha": 1.0
+			},
+			"scale": {
+				"x": 2.0,
+				"y": 2.0
+			},
+			"rotation": 0.0,
+			"tags": [],
+			"velocity": 80,
+			"children": [],
+			"behaviours": [
+				"DrawRectangle",
+				"WASD"
+			]
+		},
+		{
+			"name": "Snoopy",
+			"visible": true,
+			"position": {
+				"x": 0,
+				"y": 0,
+				"z": 1
+			},
+			"image": "images/snoopy.png",
+			"imageBounds": {
+				"width": 294,
+				"height": 340,
+				"offset": {
+					"x": 0,
+					"y": 0
+				}
+			},
+			"scale": {
+				"x": 1,
+				"y": 1
+			},
+			"rotation": 0,
+			"tags": [],
+			"children": [],
+			"behaviours": [
+				"DrawImage"
+			]
+		}
+	],
+	"events": [
+		"MyCustomEvent"
+	],
+	"images": [],
+	"sounds": [],
+	"behaviours": [
+		"behaviours/WASD.js"
+	],
+	"tests": []
+}

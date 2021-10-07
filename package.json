@@ -1,21 +1,52 @@
 {
-  "name": "prognosis",
-  "version": "0.0.1",
-  "description": "",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ejrbuss/prognosis.git"
-  },
-  "author": "",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/ejrbuss/prognosis/issues"
-  },
-  "homepage": "https://github.com/ejrbuss/prognosis#readme",
-  "dependencies": {
-    "@types/node": "^15.6.1"
-  }
+	"name": "prognosis",
+	"displayName": "Prognosis",
+	"description": "A VSCode native game engine",
+	"version": "0.0.1",
+	"type": "module",
+	"engines": {
+		"vscode": "^1.29.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onCommand:prognosis.start"
+	],
+	"main": "./src/EditorManager.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "prognosis.start",
+				"title": "Prognosis: Start"
+			}
+		],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "prognosis-explorer",
+					"title": "Prognosis Explorer",
+					"icon": "assets/images/bumblebee.jpg"
+				}
+			]
+		},
+		"views": {
+			"prognosis-explorer": [
+				{
+					"id": "prognosis-scenes",
+					"name": "Scenes"
+				},
+				{
+					"id": "prognosis-assets",
+					"name": "Assets"
+				}
+			]
+		}
+	},
+	"dependencies": {
+		"vscode": "^0.9.9"
+	},
+	"devDependencies": {
+		"prettier": "2.4.1"
+	}
 }
