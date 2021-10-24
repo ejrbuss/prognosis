@@ -1,51 +1,39 @@
+import { ClassUtil } from "./data/ClassUtil.js";
+import { Behaviour } from "./Behaviour.js";
+import { GameObject } from "./GameObject.js";
 import { GameObjects } from "./GameObjects.js";
-import { Loader } from "./Loader.js";
-import { Types } from "./Types.js";
 
-const All = new Set();
+/** @type {{ [name: String]: Layer }} */
+export const Layers = {};
 
-const JsonType = {
-	name: String,
-	inWorldSpace: Boolean,
-	gameObjects: [Types.String],
-};
+export class Layer {
+	/** @type {string} */ name = String;
+	/** @type {boolean} */ inWorldSpace = Boolean;
+	/** @type {GameObject[]} */ gameObjects = [GameObject];
+	/** @type {Behaviour[]} */ behaviours = [Behaviour];
 
-const DefType = {
-	name: String,
-	inWorldSpace: Boolean,
-	gameObjects: [Types.GameObject],
-};
-
-const create = (layerDef) => {
-	Types.check(DefType, layerDef);
-	All.add(layerDef);
-	return layerDef;
-};
-
-export const Layers = {
-	All,
-	create,
-};
-
-Types.define(Types.Layer, (v) => All.has(v));
-
-Loader.define(Types.Layer, (json) => {
-	Types.check(JsonType, json);
-	const { name } = json;
-	if (name in Layers) {
-		throw new Error(`Duplicate layer name: ${name}!`);
+	/**
+	 *
+	 * @param {Layer} values
+	 * @param {boolean} checked
+	 */
+	constructor(values, checked = true) {
+		ClassUtil.dataClassConstructor(this, values, checked);
+		ClassUtil.defineNamedInstance(this, Layers);
 	}
-	const layerDef = { ...json };
-	const gameObjects = [];
-	for (const name of json.gameObjects) {
-		const gameObject = GameObjects[name];
-		if (!gameObject) {
-			throw new Error(`Unknown gameObject: ${name}!`);
-		}
-		gameObjects.push(gameObject);
-	}
-	layerDef.gameObjects = gameObjects;
-	const layer = create(layerDef);
-	Layers[name] = layer;
-	return layer;
-});
+}
+
+/**
+ *
+ * @param {any} json
+ * @returns {Layer}
+ */
+Layer.load = function (json) {
+	let values = { ...json };
+	values.gameObjects = ClassUtil.resolveNamedInstances(
+		values.gameObjects,
+		GameObject,
+		GameObjects
+	);
+	return new Layer(values);
+};

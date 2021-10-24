@@ -43,10 +43,8 @@
 			]
 		}
 	},
-	"dependencies": {
-		"vscode": "^0.9.9"
-	},
 	"devDependencies": {
-		"prettier": "2.4.1"
+		"eslint": "^7.32.0",
+		"vscode": "^0.9.9"
 	}
 }

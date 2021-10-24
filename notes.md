@@ -513,7 +513,9 @@ export const generate = (props) => {
 ```
 
 # TODO
- - [X] DrawImage
+ - [ ] Runtime
+ - [ ] Project
+ - [ ] DrawSprite
  - [ ] DrawText
  - [ ] DebugText (FPS, Max Frame Time, Scene)
  - [ ] TileMaps

@@ -1,20 +1,24 @@
-const isConstructor = (value) => {
-	return (
-		typeof value === "object" &&
-		value !== null &&
-		"prototype" in value &&
-		"constructor" in value.prototype &&
-		value === value.prototype.constructor
-	);
-};
+export const Util = {};
 
-const errorWithCause = (message, cause) => {
+/**
+ *
+ * @param {string} message
+ * @param {Error} cause
+ * @returns {Error}
+ */
+Util.errorWithCause = function (message, cause) {
 	const error = new Error(message);
 	error.stack = `${error.stack}\nCaused by: ${cause.stack}`;
 	return error;
 };
 
-const atPath = (value, path) => {
+/**
+ *
+ * @param {any} value
+ * @param {string[]} path
+ * @returns {any}
+ */
+Util.atPath = function (value, path) {
 	let result = value;
 	for (const part of path) {
 		if (typeof result !== "object" || result == null) {
@@ -25,7 +29,14 @@ const atPath = (value, path) => {
 	return result;
 };
 
-const range = (begin, end, step) => {
+/**
+ *
+ * @param {number} begin
+ * @param {number} end
+ * @param {number} step
+ * @returns {number[]}
+ */
+Util.range = function (begin, end, step) {
 	if (typeof end === "undefined") {
 		return range(0, end, 1);
 	}
@@ -39,13 +50,25 @@ const range = (begin, end, step) => {
 	return result;
 };
 
-const repeat = (value, times) => {
+/**
+ * @template T
+ * @param {T} value
+ * @param {number} times
+ * @returns {T[]}
+ */
+Util.repeat = function (value, times) {
 	const result = new Array(times);
 	result.fill(value);
 	return result;
 };
 
-const repeatArray = (array, times) => {
+/**
+ * @template T
+ * @param {T[]} array
+ * @param {number} times
+ * @returns {T[]}
+ */
+Util.repeatArray = function (array, times) {
 	const result = [];
 	for (let i = 0; i < times; i += 1) {
 		result.push(...array);
@@ -53,33 +76,41 @@ const repeatArray = (array, times) => {
 	return result;
 };
 
-const capitalize = (name) => {
+/**
+ *
+ * @param {string} tab
+ * @param {string} text
+ * @returns {string}
+ */
+Util.tab = function (tab, text) {
+	return text.replace(/\n/g, `\n${tab}`);
+};
+
+/**
+ *
+ * @param {string} name
+ * @returns {string}
+ */
+Util.capitalize = function (name) {
 	return name.charAt(0).toUpperCase() + name.substring(1);
 };
 
-const unCapitalize = (name) => {
+/**
+ *
+ * @param {string} name
+ * @returns {string}
+ */
+Util.unCapitalize = function (name) {
 	return name.charAt(0).toLowerCase() + name.substring(1);
 };
 
-const isCapitalized = (name) => {
-	return name.charAt(0).toUpperCase() === name.charAt(0);
-};
-
-const deepCopy = (value) => {
-	if (typeof value !== "object" || value === null) {
-		return value;
-	}
-	if (Array.isArray(value)) {
-		return value.map(deepCopy);
-	}
-	const result = {};
-	for (const key in value) {
-		result[key] = deepCopy(value[key]);
-	}
-	return result;
-};
-
-const equals = (first, second) => {
+/**
+ *
+ * @param {any} first
+ * @param {any} second
+ * @returns {boolean}
+ */
+Util.equals = function (first, second) {
 	if (first === second) {
 		return true;
 	}
@@ -102,7 +133,13 @@ const equals = (first, second) => {
 	return true;
 };
 
-const inspect = (value, options = {}) => {
+/**
+ *
+ * @param {any} value
+ * @param {{ annotations: { path: string[], message: string }[], maxDepth: number, tab: string }} options
+ * @returns
+ */
+Util.inspect = function (value, options = {}) {
 	const inspectAtPath = (value, path, suffix) => {
 		for (const annotation of annotations) {
 			if (equals(annotation.path, path)) {
@@ -130,7 +167,7 @@ const inspect = (value, options = {}) => {
 			const inspectedValues = [];
 			for (const i in value) {
 				path.push(i);
-				inspectedValues.push(insertTab(inspectAtPath(value[i], path, ",")));
+				inspectedValues.push(tab(tab, inspectAtPath(value[i], path, ",")));
 				path.pop();
 			}
 			return `[\n${tab}${inspectedValues.join(`\n${tab}`)}\n]${suffix}`;
@@ -145,7 +182,7 @@ const inspect = (value, options = {}) => {
 		for (const key in value) {
 			path.push(key);
 			inspectedValues.push(
-				insertTab(inspectKey(key) + ": " + inspectAtPath(value[key], path, ","))
+				tab(tab, inspectKey(key) + ": " + inspectAtPath(value[key], path, ","))
 			);
 			path.pop();
 		}
@@ -156,11 +193,7 @@ const inspect = (value, options = {}) => {
 		if (/[_A-Za-z][_A-Za-z0-9]*/.test(key)) {
 			return key;
 		}
-		return `[${JSON.stringify(key)}]`;
-	};
-
-	const insertTab = (string) => {
-		return string.replace(/\n/g, `\n${tab}`);
+		return JSON.stringify(key);
 	};
 
 	const depthForAnnotations = () => {
@@ -178,18 +211,33 @@ const inspect = (value, options = {}) => {
 	return inspectAtPath(value, [], "", "");
 };
 
-const delay = async (timeMs) => {
+/**
+ *
+ * @param {number} timeMs
+ */
+Util.delayMs = async function (timeMs) {
 	return new Promise((resolve) => {
 		setTimeout(resolve, timeMs);
 	});
 };
 
-const doAsync = async (func) => {
-	await delay(0);
+/**
+ *
+ * @param {function} func
+ * @returns {Promise<any>}
+ */
+Util.doAsync = async function (func) {
+	await delayMs(0);
 	return func();
 };
 
-const basename = (path, suffix = "") => {
+/**
+ *
+ * @param {string} path
+ * @param {string} suffix
+ * @returns {string}
+ */
+Util.basename = function (path, suffix = "") {
 	const parts = path.split("/");
 	const basename = parts[parts.length - 1];
 	if (basename && basename.endsWith(suffix)) {
@@ -198,35 +246,29 @@ const basename = (path, suffix = "") => {
 	return basename;
 };
 
-const fetchJson = async (url) => {
+/**
+ *
+ * @param {string} url
+ * @returns {Promise<any>}
+ */
+Util.fetchJson = async function (url) {
 	return await (await fetch(url)).json();
 };
 
-const fetchText = async (url) => {
+/**
+ *
+ * @param {string} url
+ * @returns {Promise<any>}
+ */
+Util.fetchText = async function (url) {
 	return await (await fetch(url)).text();
 };
 
-const importFromRoot = async (url) => {
+/**
+ *
+ * @param {string} url
+ * @returns {Promise<any>}
+ */
+Util.importFromRoot = async function (url) {
 	return await import(`../${url}`);
-};
-
-export const Util = {
-	isConstructor,
-	errorWithCause,
-	atPath,
-	range,
-	repeat,
-	repeatArray,
-	capitalize,
-	unCapitalize,
-	isCapitalized,
-	deepCopy,
-	equals,
-	inspect,
-	delay,
-	doAsync,
-	basename,
-	fetchJson,
-	fetchText,
-	importFromRoot,
 };

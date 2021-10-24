@@ -1,218 +1,201 @@
-import { Events } from "./Events.js";
-import { Mat3 } from "./linearAlgebra/Mat3.js";
-import { Vec3 } from "./linearAlgebra/Vec3.js";
-import { BatchRenderer } from "./BatchRenderer.js";
-import { Transforms } from "./Transforms.js";
-import { Util } from "./Util.js";
-import { WebglWrapper } from "./WebglWrapper.js";
+import { Transform } from "./data/Transform.js";
+import { Color } from "./data/Color.js";
+import { Vec2 } from "./data/Vec2.js";
+import { Vec3 } from "./data/Vec3.js";
+import { Mat3 } from "./data/Mat3.js";
+import { Sprite } from "./data/Sprite.js";
+import { RenderCommand, Renderer } from "./Renderer.js";
 
-let canvas;
-let transformStack;
-let currentLayerIndex;
-let currentSpace;
+export const Graphics = {};
 
-const _initialize = async () => {
-	canvas = document.getElementById("game-canvas");
-	canvas.width = Graphics.width;
-	canvas.height = Graphics.height;
-	canvas.style.imageRendering = Graphics.antiAlias ? "auto" : "pixelated";
-	window.addEventListener("resize", resize);
-	resize();
-	const gl = canvas.getContext("webgl", {
-		antiAlias: Graphics.antiAlias,
-		desyrchnoized: true,
-	});
-	await WebglWrapper._initialize(gl);
-	transformStack = [Transforms.Identity];
+/** @type {number} */
+Graphics.width = null;
+
+/** @type {number} */
+Graphics.height = null;
+
+/** @type {boolean} */
+Graphics.antiAlias = null;
+
+/** @type {Transform[]} */
+Graphics.transformStack = null;
+
+/** @type {Renderer} */
+Graphics.renderer = null;
+
+/**
+ *
+ * @returns {Transform}
+ */
+Graphics.currentTransform = function () {
+	const transformIndex = Graphics.transformStack.length - 1;
+	return Graphics.transformStack[transformIndex];
 };
 
-const _render = (scene) => {
-	const { layers } = scene;
-	const length = layers.length;
-	for (let layerIndex = 0; layerIndex < length; layerIndex += 1) {
-		const { inWorldSpace, gameObjects } = layers[layerIndex];
-		currentLayerIndex = layerIndex;
-		currentSpace = inWorldSpace
-			? BatchRenderer.WorldSpace
-			: BatchRenderer.ScreenSpace;
-		renderGameObjects(gameObjects);
-	}
-	BatchRenderer.flushWithUniforms({
-		uCamera: Transforms.toMat3(scene.camera),
-		uViewport: Mat3.scale(
-			Mat3.Identity,
-			1 / Graphics.width,
-			1 / Graphics.height
-		),
-	});
+/**
+ *
+ * @param {Transform} transform
+ */
+Graphics.pushTransform = function (transform) {
+	const currentTransform = Graphics.currentTransform();
+	const nextTransform = Transform.compose(currentTransform, transform);
+	Graphics.transformStack.push(nextTransform);
 };
 
-const renderGameObject = (gameObject) => {
-	const { visible, behaviours, children } = gameObject;
-	if (!visible) {
-		return;
-	}
-	pushTransform(gameObject);
-	for (const { eventHandlers } of behaviours) {
-		const onRender = eventHandlers.Render ?? eventHandlers.Event;
-		if (onRender) {
-			onRender({ event: Events.Render }, gameObject);
-		}
-	}
-	renderGameObjects(children);
-	popTransform();
+/**
+ *
+ */
+Graphics.popTransform = function () {
+	Graphics.transformStack.pop();
 };
 
-const renderGameObjects = (gameObjects) => {
-	for (const gameObject of gameObjects) {
-		renderGameObject(gameObject);
-	}
+/**
+ *
+ * @param {Vec2[]} points
+ * @param {number} thickness
+ * @param {Color} color
+ */
+Graphics.drawLines = function (points, thickness, color) {
+	throw new Error("TODO");
 };
 
-const pushTransform = (transform) => {
-	const transformIndex = transformStack.length - 1;
-	const currentTransform = transformStack[transformIndex];
-	const nextTransform = Transforms.combine(currentTransform, transform);
-	transformStack.push(nextTransform);
+/**
+ * @param {Vec2} point1
+ * @param {Vec2} point2
+ * @param {Vec2} point3
+ * @param {Color} color
+ */
+Graphics.drawTriangle = function (point1, point2, point3, color) {
+	const currentTransform = Graphics.currentTransform();
+	const transformMatrix = Transform.toMat3(currentTransform);
+
+	const p1 = Vec3({ x: pos1.x, y: pos1.y, z: 1 });
+	const p2 = Vec3({ x: pos2.x, y: pos2.y, z: 1 });
+	const p3 = Vec3({ x: pos3.x, y: pos3.y, z: 1 });
+
+	const v1 = Mat3.transform(transformMatrix, p1);
+	const v2 = Mat3.transform(transformMatrix, p2);
+	const v3 = Mat3.transform(transformMatrix, p3);
+
+	Renderer.pushCommand(
+		Graphics.renderer,
+		new RenderCommand({
+			vertexCoords: [v1.x, v1.y, v2.x, v2.y, v3.x, v3.y],
+			textureCoords: [0, 0, 0, 0, 0, 0],
+			texture: Graphics.renderer.emptyTexture,
+			tint: color,
+			z: currentTransform.z,
+		})
+	);
 };
 
-const popTransform = () => {
-	transformStack.pop();
+/**
+ *
+ * @param {Vec2} position
+ * @param {number} width
+ * @param {number} height
+ * @param {Color} color
+ */
+Graphics.drawRectangle = function (position, width, height, color) {
+	const currentTransform = Graphics.currentTransform();
+	const transformMatrix = Transform.toMat3(currentTransform);
+
+	const x1 = position.x;
+	const x2 = x1 + width;
+	const y1 = position.y;
+	const y2 = y1 + height;
+
+	const p1 = Vec3({ x: x1, y: y1, z: 1 });
+	const p2 = Vec3({ x: x2, y: y1, z: 1 });
+	const p3 = Vec3({ x: x2, y: y2, z: 1 });
+	const p4 = Vec3({ x: x1, y: y2, z: 1 });
+
+	const v1 = Mat3.transform(transformMatrix, p1);
+	const v2 = Mat3.transform(transformMatrix, p2);
+	const v3 = Mat3.transform(transformMatrix, p3);
+	const v4 = Mat3.transform(transformMatrix, p4);
+
+	Renderer.pushCommand(
+		Graphics.renderer,
+		new RenderCommand({
+			vertexCoords: [v1.x, v1.y, v2.x, v2.y, v3.x, v3.y],
+			textureCoords: [0, 0, 0, 0, 0, 0],
+			texture: Graphics.renderer.emptyTexture,
+			tint: color,
+			z: currentTransform.z,
+		})
+	);
+	Renderer.pushCommand(
+		Graphics.renderer,
+		new RenderCommand({
+			vertexCoords: [v3.x, v3.y, v4.x, v4.y, v1.x, v1.y],
+			textureCoords: [0, 0, 0, 0, 0, 0],
+			texture: Graphics.renderer.emptyTexture,
+			tint: color,
+			z: currentTransform.z,
+		})
+	);
 };
 
-const drawRectangle = (x, y, width, height, color) => {
-	const transformIndex = transformStack.length - 1;
-	const currentTransform = transformStack[transformIndex];
-	const transformMatrix = Transforms.toMat3(currentTransform);
-	const z = currentTransform.position.z;
-	// push triangle 1
-	const p1 = Vec3.create(x, y, 1);
-	const p2 = Vec3.create(x + width, y, 1);
-	const p3 = Vec3.create(x + width, y + height, 1);
-	const tp1 = Vec3.transform(p1, transformMatrix);
-	const tp2 = Vec3.transform(p2, transformMatrix);
-	const tp3 = Vec3.transform(p3, transformMatrix);
-	// prettier-ignore
-	let vertexCoords = [
-		tp1[0], tp1[1],
-		tp2[0], tp2[1],
-		tp3[0], tp3[1],
-	];
-	BatchRenderer.pushColoredTriangle({
-		z,
-		vertexCoords,
-		color,
-		layerIndex: currentLayerIndex,
-		space: currentSpace,
-	});
-	// push triangle 2
-	const p4 = Vec3.create(x + width, y + height, 1);
-	const p5 = Vec3.create(x, y + height, 1);
-	const p6 = Vec3.create(x, y, 1);
-	const tp4 = Vec3.transform(p4, transformMatrix);
-	const tp5 = Vec3.transform(p5, transformMatrix);
-	const tp6 = Vec3.transform(p6, transformMatrix);
-	// prettier-ignore
-	vertexCoords = [
-		tp4[0], tp4[1],
-		tp5[0], tp5[1],
-		tp6[0], tp6[1],
-	];
-	BatchRenderer.pushColoredTriangle({
-		z,
-		vertexCoords,
-		color,
-		space: currentSpace,
-		layerIndex: currentLayerIndex,
-	});
+/**
+ *
+ * @param {Vec2} position
+ * @param {number} width
+ * @param {number} height
+ * @param {Sprite} sprite
+ */
+Graphics.drawSprite = function (position, width, height, sprite, tint) {
+	const currentTransform = Graphics.currentTransform();
+	const transformMatrix = Transform.toMat3(currentTransform);
+
+	const x1 = position.x;
+	const x2 = x1 + width;
+	const y1 = position.y;
+	const y2 = y1 + height;
+
+	const p1 = Vec3({ x: x1, y: y1, z: 1 });
+	const p2 = Vec3({ x: x2, y: y1, z: 1 });
+	const p3 = Vec3({ x: x2, y: y2, z: 1 });
+	const p4 = Vec3({ x: x1, y: y2, z: 1 });
+
+	const v1 = Mat3.transform(transformMatrix, p2);
+	const v2 = Mat3.transform(transformMatrix, p1);
+	const v3 = Mat3.transform(transformMatrix, p3);
+	const v4 = Mat3.transform(transformMatrix, p4);
+
+	const tx1 = sprite.x;
+	const tx2 = tx1 + sprite.width;
+	const ty1 = sprite.y;
+	const ty2 = ty1 + sprite.height;
+
+	Renderer.pushCommand(
+		Graphics.renderer,
+		new RenderCommand({
+			vertexCoords: [v1.x, v1.y, v2.x, v2.y, v3.x, v3.y],
+			textureCoords: [tx1, ty1, tx2, ty1, tx2, ty2],
+			texture: sprite.texture,
+			z: currentTransform.z,
+			tint,
+		})
+	);
+	Renderer.pushCommand(
+		Graphics.renderer,
+		new RenderCommand({
+			vertexCoords: [v3.x, v3.y, v4.x, v4.y, v1.x, v1.y],
+			textureCoords: [tx2, ty2, tx1, ty2, tx1, ty1],
+			texture: sprite.texture,
+			z: currentTransform.z,
+			tint,
+		})
+	);
 };
 
-const drawImage = (x, y, width, height, image) => {
-	const transformIndex = transformStack.length - 1;
-	const currentTransform = transformStack[transformIndex];
-	const transformMatrix = Transforms.toMat3(currentTransform);
-	const z = currentTransform.position.z;
-	// push triangle 1
-	const p1 = Vec3.create(x, y, 1);
-	const p2 = Vec3.create(x + width, y, 1);
-	const p3 = Vec3.create(x + width, y + height, 1);
-	const tp1 = Vec3.transform(p1, transformMatrix);
-	const tp2 = Vec3.transform(p2, transformMatrix);
-	const tp3 = Vec3.transform(p3, transformMatrix);
-	// prettier-ignore
-	let vertexCoords = [
-		tp1[0], tp1[1],
-		tp2[0], tp2[1],
-		tp3[0], tp3[1],
-	];
-	// prettier-ignore
-	let textureCoords = [
-		1, 1,
-		0, 1,
-		0, 0,
-	];
-	BatchRenderer.pushTexturedTriangle({
-		z,
-		vertexCoords,
-		textureCoords,
-		layerIndex: currentLayerIndex,
-		space: currentSpace,
-		texture: image.texture,
-	});
-	// push triangle 2
-	const p4 = Vec3.create(x + width, y + height, 1);
-	const p5 = Vec3.create(x, y + height, 1);
-	const p6 = Vec3.create(x, y, 1);
-	const tp4 = Vec3.transform(p4, transformMatrix);
-	const tp5 = Vec3.transform(p5, transformMatrix);
-	const tp6 = Vec3.transform(p6, transformMatrix);
-	// prettier-ignore
-	vertexCoords = [
-		tp4[0], tp4[1],
-		tp5[0], tp5[1],
-		tp6[0], tp6[1],
-	];
-	// prettier-ignore
-	textureCoords = [
-		0, 0,
-		1, 0,
-		1, 1,
-	];
-	BatchRenderer.pushTexturedTriangle({
-		z,
-		vertexCoords,
-		textureCoords,
-		layerIndex: currentLayerIndex,
-		space: currentSpace,
-		texture: image.texture,
-	});
-};
-
-const resize = () => {
-	const gameAspect = Graphics.width / Graphics.height;
-	const screenAspect = innerWidth / innerHeight;
-
-	if (screenAspect < gameAspect) {
-		canvas.style.width = "100vw";
-		canvas.style.height = `calc(100vw / ${gameAspect})`;
-	} else {
-		canvas.style.width = `calc(100vh * ${gameAspect})`;
-		canvas.style.height = "100vh";
-	}
-};
-
-export const Graphics = {
-	width: undefined,
-	height: undefined,
-	antiAlias: undefined,
-	_initialize,
-	_render,
-	pushTransform,
-	popTransform,
-	drawRectangle,
-	drawImage,
-	// drawPoint,
-	// drawLines,
-	// drawTriangle,
-	// drawPolygon,
+/**
+ *
+ * @param {Vec2} position
+ * @param {string} text
+ * @param {Font} font
+ */
+Graphics.drawText = function (position, text, font) {
+	throw new Error("TODO");
 };

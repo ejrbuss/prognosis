@@ -1,36 +1,22 @@
 import { Types } from "./Types.js";
 
-export class Loader {
-	static loadBehaviour() {}
-}
+const Loader = {};
 
-const LoaderByType = new Map();
-
-const load = async (type, json) => {
-	const loader = LoaderByType.get(type);
-	if (!loader) {
-		// Try trivial loader
-		Types.check(type, json);
+/**
+ * @template T
+ * @param {typeof T} type
+ * @param {any} json
+ * @returns {Promise<T>}
+ */
+Loader.load = async function (type, json) {
+	// Check for trivial load
+	if (Types.conforms(type, json)) {
 		return json;
 	}
-	return await loader(json);
-};
-
-const loadAll = async (type, json) => {
-	const promises = [];
-	for (const subJson of json) {
-		promises.push(load(type, subJson));
+	// Custom laoder
+	if (type.load !== undefined) {
+		return type.load(json);
 	}
-	return await Promise.all(promises);
-};
-
-const define = (type, loader) => {
-	Types.check(Types.Function, loader);
-	LoaderByType.set(type, loader);
-};
-
-export const Loader = {
-	load,
-	loadAll,
-	define,
+	// Fallback to constructor
+	return new type(json);
 };

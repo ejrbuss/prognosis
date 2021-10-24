@@ -1,103 +1,105 @@
-import { Loader } from "./Loader.js";
-import { Scenes } from "./Scenes.js";
-import { Types } from "./Types.js";
+import { ClassUtil } from "./data/ClassUtil.js";
+import { GameObject } from "./GameObjects.js";
+import { Scene } from "./Scenes.js";
+import { Any, Types } from "./Types.js";
 
-const Event = "Event";
-const SceneStart = "SceneStart";
-const SceneEnd = "SceneEnd";
-const Create = "Create";
-const Destroy = "Destroy";
-const Update = "Update";
-const Render = "Render";
+class EventDetails {
+	/** @type {GameObject | undefined} */ target = Any;
+	/** @type {{ event: string }} */ properties = { event: String };
+	/** @type {function} */ resolve = Function;
 
-const All = new Set([
-	Event,
-	SceneStart,
-	SceneEnd,
-	Create,
-	Destroy,
-	Update,
-	Render,
-]);
+	/**
+	 *
+	 * @param {EventDetails} values
+	 * @param {boolean} checked
+	 */
+	constructor(values, checked = true) {
+		ClassUtil.dataClassConstructor(this, values, checked);
+	}
+}
 
-const EventQueue = [];
+export const Events = {};
 
-const create = (event) => {
+Events.SceneStart = "SceneStart";
+Events.SceneEnd = "SceneEnd";
+Events.Create = "Create";
+Events.Destroy = "Destroy";
+Events.Update = "Update";
+Events.Render = "Render";
+
+export const EventQueue = {};
+
+/**
+ *
+ * @param {Array} queue
+ * @param {string} event
+ * @param {Object} properties
+ * @param {GameObject} target
+ */
+EventQueue.trigger = async function (queue, event, properties, target) {
+	Types.check(Array, queue);
 	Types.check(String, event);
-	All.add(event);
-	return event;
+	Types.check(Object, properties);
+	if (target) {
+		Types.check(GameObject, target);
+	}
+	return new Promise((resolve) =>
+		queue.push(
+			new EventDetails({
+				target,
+				properties: { event, ...properties },
+				resolve,
+			})
+		)
+	);
 };
 
-const cause = async (event, properties = {}, target = undefined) => {
-	return new Promise((resolve) => {
-		EventQueue.push({
-			event,
-			properties: { event, ...properties },
-			target,
-			resolve,
-		});
-	});
-};
-
-const _processEventQueue = () => {
-	while (EventQueue.length) {
-		const { event, properties, target, resolve } = EventQueue.pop();
-		const promises = [];
+/**
+ *
+ * @param {EventDetails[]} queue
+ * @param {Scene} scene
+ */
+EventQueue.process = function (queue, scene) {
+	Types.check([EventDetails], queue);
+	Types.check(Scene, scene);
+	while (queue.length > 0) {
+		let { target, resolve, properties } = queue.pop();
+		let promises = [];
 		if (target) {
-			promises.push(...dispatchToTarget(event, properties, target));
+			dispatchToTarget(target, properties, promises);
 		} else {
-			const { layers } = Scenes.currentScene;
-			for (const { gameObjects } of layers) {
-				promises.push(...dispatchToAll(event, properties, gameObjects));
+			for (const layer of scene.layers) {
+				dispatchToAll(layer.gameObjects, properties, promises);
 			}
 		}
 		Promise.all(promises).then(resolve);
 	}
 };
 
-const dispatchToTarget = (event, properties, gameObject) => {
-	const promises = [];
-	const { children, behaviours } = gameObject;
-	for (const { eventHandlers } of behaviours) {
-		const eventHandler = eventHandlers[event] ?? eventHandlers.Event;
+/**
+ *
+ * @param {GameObject} target
+ * @param {Object} properties
+ * @param {Array} promises
+ */
+function dispatchToTarget(target, properties, promises) {
+	for (let behaviour of target.behaviours) {
+		let eventHandler = behaviour.eventHandlers[properties.event];
 		if (eventHandler) {
-			promises.push(eventHandler(properties, gameObject));
+			promises.push(eventHandler(properties, target));
 		}
 	}
-	promises.push(...dispatchToAll(event, properties, children));
-	return promises;
-};
+	dispatchToAll(target.children, properties, promises);
+}
 
-const dispatchToAll = (event, properties, gameObjects) => {
-	const promises = [];
-	for (const gameObject of gameObjects) {
-		promises.push(...dispatchToTarget(event, properties, gameObject));
+/**
+ *
+ * @param {GameObject[]} targets
+ * @param {Object} properties
+ * @param {Array} promises
+ */
+function dispatchToAll(targets, properties, promises) {
+	for (let target of targets) {
+		dispatchToTarget(target, properties, promises);
 	}
-	return promises;
-};
-
-export const Events = {
-	All,
-	Event,
-	SceneStart,
-	SceneEnd,
-	Create,
-	Destroy,
-	Update,
-	Render,
-	create,
-	cause,
-	_processEventQueue,
-};
-
-Types.define(Types.Event, (v) => All.has(v));
-
-Loader.define(Types.Event, (json) => {
-	Types.check(Types.String, json);
-	if (json in Events) {
-		throw new Error(`Duplicate event: ${json}!`);
-	}
-	const event = create(json);
-	Events[event] = event;
-	return event;
-});
+}

@@ -1,171 +1,161 @@
+import { ClassUtil } from "./data/ClassUtil.js";
 import { Util } from "./Util.js";
 
-function Any() {}
-function Undefined() {}
-function Function() {}
-function Event() {}
-function Behaviour() {}
-function Scene() {}
-function Layer() {}
-function Image() {}
-function Sound() {}
-function GameObject() {}
-function Test() {}
+const IdentifierRegexp = /^[_A-Za-z][_A-Za-z0-9]*$/;
 
-const Color = {
-	red: Number,
-	green: Number,
-	blue: Number,
-	alpha: Number,
+const Primitves = new Set([Boolean, Number, BigInt, String, Symbol, Function]);
+
+const TypeofToPrimitive = {
+	boolean: Boolean,
+	number: Number,
+	bigint: BigInt,
+	string: String,
+	symbol: Symbol,
+	function: Function,
 };
 
-const Point2D = {
-	x: Number,
-	y: Number,
-};
+export class Any {}
 
-const Point3D = {
-	x: Number,
-	y: Number,
-	z: Number,
-};
+export class Explanation {
+	/** @type {type} */ type = Any;
+	/** @type {value} */ value = Any;
+	/** @type {{ path: string[], type: any, value: any }} */ problems = [
+		{
+			path: [String],
+			type: Any,
+			value: Any,
+		},
+	];
 
-const BoundingBox = {
-	width: Number,
-	height: Number,
-	offset: Point2D,
-};
-
-const Transform = {
-	position: Point3D,
-	rotation: Number,
-	scale: Point2D,
-};
-
-const Font = {
-	family: String,
-	style: String,
-	size: Number,
-	horizontalAlignment: String,
-	verticalAlignment: String,
-	color: Color,
-};
-
-const SpriteSheet = {
-	image: Image,
-	jsonData: Object,
-};
-
-const TypeRegister = new Map();
-
-const define = (representative, predicate) => {
-	TypeRegister.set(representative, predicate);
-	return representative;
-};
-
-const isFundamental = (type) => {
-	return TypeRegister.has(type);
-};
-
-const typeOf = (value) => {
-	for (const [representative, predicate] of TypeRegister.entries()) {
-		if (predicate(value)) {
-			return representative;
-		}
+	/**
+	 *
+	 * @param {Explanation} values
+	 * @param {boolean} checked
+	 */
+	constructor(values, checked = true) {
+		ClassUtil.dataClassConstructor(this, values, checked);
 	}
-	if (value instanceof Array) {
-		const types = [];
-		let lastType;
-		let allMatch = true;
-		for (const v of value) {
-			const type = typeOf(v);
-			types.push(type);
-			lastType = lastType ?? type;
-			allMatch = allMatch && Util.equals(type, lastType);
-			lastType = type;
-		}
-		if (allMatch && lastType) {
-			return [lastType];
-		}
-		return types;
-	}
-	if (value instanceof Object) {
-		if (value.constructor !== Object) {
-			return value.constructor;
-		}
-		const type = {};
-		for (const key in value) {
-			type[key] = typeOf(value[key]);
-		}
-		return type;
-	}
-	throw new Error(`Could not determine type of ${value}!`);
-};
+}
 
-const nameOf = (type) => {
-	if (TypeRegister.has(type) || Util.isConstructor(type)) {
+export const Types = {};
+
+/**
+ *
+ * @param {Object} type
+ * @returns {String}
+ */
+Types.nameOf = function (type) {
+	if (typeof type === "function") {
 		return type.name;
 	}
 	if (type instanceof Array) {
-		// Special case the empty Array
 		if (type.length === 0) {
 			return "Array";
 		}
-		return Util.inspect(type.map(nameOf));
+		const namedTypes = [];
+		for (const i in type) {
+			namedTypes.push(Util.tab("\t", Types.nameOf(type[i])));
+		}
+		const multiline = namedTypes.some((text) => text.includes("\n"));
+		if (multiline) {
+			return `[\n\t${namedTypes.join(",\n\t")}\n]`;
+		} else {
+			return `[${namedTypes.join(", ")}]`;
+		}
 	}
 	if (type instanceof Object) {
-		if (Object.keys(type).length === 0) {
+		const keys = Object.keys(type);
+		if (keys.length === 0) {
 			return "Object";
 		}
-		const nameObject = {};
-		for (const key in type) {
-			nameObject[key] = nameOf(type[key]);
+		const namedTypes = [];
+		for (const key of keys) {
+			let keyName;
+			if (IdentifierRegexp.test(key)) {
+				keyName = key;
+			} else if (key === String.toString()) {
+				keyName = "[String]";
+			} else {
+				keyName = JSON.stringify(key);
+			}
+			namedTypes.push(`${keyName}: ${Util.tab("\t", Types.nameOf(type[key]))}`);
 		}
-		return Util.inspect(nameObject);
+		return `{\n\t${namedTypes.join(",\n\t")}\n}`;
 	}
 	throw new Error(`Not a valid type: ${type}!`);
 };
 
-const explain = (type, value) => {
-	const predicate = TypeRegister.get(type);
-	if (predicate) {
-		return predicate(value)
-			? { type, value, problems: [] }
-			: { type, value, problems: [{ value, type, path: [] }] };
+/**
+ *
+ * @param {Object} type
+ * @param {Any} value
+ * @returns {Explanation}
+ */
+Types.explain = function (type, value) {
+	// Explanation for no problems
+	const noProblems = new Explanation({ type, value, problems: [] });
+	// Explanation if this is the failing type
+	const topLevelProblem = new Explanation({
+		type,
+		value,
+		problems: [{ type, value, path: [] }],
+	});
+	if (type === Any) {
+		return noProblems;
 	}
-	if (Util.isConstructor(type)) {
-		return value instanceof type
-			? { type, value, problems: [] }
-			: { type, value, problems: [{ value, type, path: [] }] };
+	if (Primitves.has(type)) {
+		return TypeofToPrimitive[typeof value] === type
+			? noProblems
+			: topLevelProblem;
+	}
+	if (value === null) {
+		return topLevelProblem;
+	}
+	if (typeof type === "function") {
+		return value instanceof type ? noProblems : topLevelProblem;
 	}
 	if (type instanceof Array) {
 		if (!(value instanceof Array)) {
-			return { type, value, problems: [{ value, type, path: [] }] };
+			return topLevelProblem;
 		}
-		// Handle tuple of type
+		// Handle tuples
 		if (type.length !== 1) {
 			const problems = [];
 			for (const i in type) {
-				const explanation = explain(type[i], value[i]);
+				const explanation = Types.explain(type[i], value[i]);
 				for (const problem of explanation.problems) {
 					problems.push({ ...problem, path: [i, ...problem.path] });
 				}
 			}
-			return { value, type, problems };
+			return new Explanation({ value, type, problems });
 		}
-		// Handle array of type
+		// Handle arrays
 		const problems = [];
+		const subType = type[0];
 		for (const i in value) {
-			const explanation = explain(type[0], value[i]);
+			const explanation = explain(subType, value[i]);
 			for (const problem of explanation.problems) {
 				problems.push({ ...problem, path: [i, ...problem.path] });
 			}
 		}
-		return { value, type, problems };
+		return new Explanation({ value, type, problems });
 	}
 	if (type instanceof Object) {
 		if (!(value instanceof Object)) {
-			return { type, value, problems: [{ value, type, path: [] }] };
+			return topLevelProblem;
+		}
+		const keys = Object.keys(type);
+		// String key
+		if (keys.length === 1 && keys[0] === String.toString()) {
+			const problems = [];
+			const subType = type[keys[0]];
+			for (const key in value) {
+				const explanation = explain(subType, value[key]);
+				for (const problem of explanation.problems) {
+					problems.push({ ...problem, path: [i, ...problem.path] });
+				}
+			}
+			return new Explanation({ value, type, problems });
 		}
 		const problems = [];
 		for (const key in type) {
@@ -174,35 +164,46 @@ const explain = (type, value) => {
 				problems.push({ ...problem, path: [key, ...problem.path] });
 			}
 		}
-		return { type, value, problems };
+		return new Explanation({ type, value, problems });
 	}
 	throw new Error(`Not a valid type: ${type}!`);
 };
 
-const conforms = (type, value) => {
-	const predicate = TypeRegister.get(type);
-	if (predicate) {
-		return predicate(value);
+/**
+ *
+ * @param {Object} type
+ * @param {Any} value
+ */
+Types.conforms = function (type, value) {
+	if (type === Any) {
+		return true;
 	}
-	if (Util.isConstructor(type)) {
+	if (Primitves.has(type)) {
+		return TypeofToPrimitive[typeof value] === type;
+	}
+	if (value === null) {
+		return false;
+	}
+	if (typeof type === "function") {
 		return value instanceof type;
 	}
 	if (type instanceof Array) {
 		if (!(value instanceof Array)) {
 			return false;
 		}
-		// Handle tuple of type
+		// Handle tuples
 		if (type.length !== 1) {
 			for (const i in type) {
-				if (!conforms(type[i], value[i])) {
+				if (!Types.conforms(type[i], value[i])) {
 					return false;
 				}
 			}
 			return true;
 		}
-		// Handle array of type
+		// Handle arrays
+		const subType = type[0];
 		for (const i in value) {
-			if (!conforms(type[0], value[i])) {
+			if (!Types.conforms(subType, value[i])) {
 				return false;
 			}
 		}
@@ -212,8 +213,19 @@ const conforms = (type, value) => {
 		if (!(value instanceof Object)) {
 			return false;
 		}
-		for (const key in type) {
-			if (!conforms(type[key], value[key])) {
+		const keys = Object.keys(type);
+		// String key
+		if (keys.length === 1 && keys[0] === String.toString()) {
+			const subType = type[keys[0]];
+			for (const key in value) {
+				if (!Types.conforms(subType, value[key])) {
+					return false;
+				}
+			}
+			return true;
+		}
+		for (const key of keys) {
+			if (!Types.conforms(type[key], value[key])) {
 				return false;
 			}
 		}
@@ -222,11 +234,17 @@ const conforms = (type, value) => {
 	throw new Error(`Not a valid type: ${type}!`);
 };
 
-const check = (type, value) => {
-	if (!conforms(type, value)) {
-		const explanation = explain(type, value);
+/**
+ * @param {Objecy} type
+ * @param {Any} value
+ */
+Types.check = function (type, value) {
+	if (!Types.conforms(type, value)) {
+		const explanation = Types.explain(type, value);
 		const error = new Error(
-			`Value does not conform to type!\n${inspectExplanation(explanation)}`
+			`Value does not conform to type!\n${Types.inspectExplanation(
+				explanation
+			)}`
 		);
 		Object.assign(error, explanation);
 		throw error;
@@ -234,12 +252,18 @@ const check = (type, value) => {
 	return value;
 };
 
-const inspectExplanation = (explanation) => {
+/**
+ *
+ * @param {Explanation} explanation
+ * @returns {String}
+ */
+Types.inspectExplanation = function (explanation) {
+	Types.check(Explanation, explanation);
 	const annotations = [];
 	for (const problem of explanation.problems) {
 		annotations.push({
 			path: problem.path,
-			message: ` <<< Expected ${nameOf(problem.type)}`,
+			message: `<<< Expected ${Types.nameOf(problem.type)}`,
 		});
 		let value = explanation.value;
 		for (const part of problem.path) {
@@ -249,52 +273,3 @@ const inspectExplanation = (explanation) => {
 	}
 	return Util.inspect(explanation.value, { annotations });
 };
-
-export const Types = {
-	// Fundamental Types
-	Any,
-	Undefined,
-	Function,
-	Number,
-	Boolean,
-	Number,
-	BigInt,
-	String,
-	Symbol,
-	Object,
-	Array,
-	Event,
-	Behaviour,
-	Scene,
-	Layer,
-	Image,
-	SpriteSheet,
-	Sound,
-	GameObject,
-	Test,
-	// Composite Types
-	Color,
-	Point2D,
-	Point3D,
-	BoundingBox,
-	Transform,
-	Font,
-
-	define,
-	isFundamental,
-	typeOf,
-	nameOf,
-	explain,
-	conforms,
-	check,
-	inspectExplanation,
-};
-
-define(Any, (_value) => true);
-define(Undefined, (value) => typeof value === "undefined");
-define(Function, (value) => typeof value === "function");
-define(Boolean, (value) => typeof value === "boolean");
-define(Number, (value) => typeof value === "number");
-define(BigInt, (value) => typeof value === "bigint");
-define(String, (value) => typeof value === "string");
-define(Symbol, (value) => typeof value === "symbol");

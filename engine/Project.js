@@ -4,6 +4,13 @@ import { Scenes } from "./Scenes.js";
 import { Types } from "./Types.js";
 import { Util } from "./Util.js";
 
+export const Project = {};
+
+/** @type {string} */
+Project.author = null;
+/** @type {string} */
+Project.title = null;
+
 let projectJson;
 
 const BuiltinBehaviours = [

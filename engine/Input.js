@@ -1,12 +1,17 @@
 import { Graphics } from "./Graphics.js";
 import { Util } from "./Util.js";
 
-const currentInput = {
+export const Input = {};
+
+Input.currentInput = {
 	mousePosition: { x: 0, y: 0 },
 	mouseDown: false,
 };
 
-const _initialize = () => {
+/**
+ *
+ */
+Input.addListeners = function () {
 	document.addEventListener("mousemove", (event) => {
 		// TODO move to screen space (centered at 0,0)
 		// also these coords just look wrong
@@ -32,9 +37,4 @@ const _initialize = () => {
 	document.addEventListener("keyup", (event) => {
 		currentInput[Util.unCapitalize(event.code)] = false;
 	});
-};
-
-export const Input = {
-	currentInput,
-	_initialize,
 };

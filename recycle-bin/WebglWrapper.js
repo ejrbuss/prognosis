@@ -1,4 +1,5 @@
 import { Util } from "./Util.js";
+import { WebglUtil } from "./WebgUtil.js";
 
 /**
  * Inspired by https://twgljs.org/, this module provides an even further
