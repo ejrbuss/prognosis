@@ -1,50 +1,27 @@
 {
-	"name": "prognosis",
-	"displayName": "Prognosis",
-	"description": "A VSCode native game engine",
-	"version": "0.0.1",
-	"type": "module",
-	"engines": {
-		"vscode": "^1.29.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"activationEvents": [
-		"onCommand:prognosis.start"
-	],
-	"main": "./src/EditorManager.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "prognosis.start",
-				"title": "Prognosis: Start"
-			}
-		],
-		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "prognosis-explorer",
-					"title": "Prognosis Explorer",
-					"icon": "assets/images/bumblebee.jpg"
-				}
-			]
-		},
-		"views": {
-			"prognosis-explorer": [
-				{
-					"id": "prognosis-scenes",
-					"name": "Scenes"
-				},
-				{
-					"id": "prognosis-assets",
-					"name": "Assets"
-				}
-			]
-		}
-	},
-	"devDependencies": {
-		"eslint": "^7.32.0",
-		"vscode": "^0.9.9"
-	}
+  "name": "prognosis",
+  "version": "0.0.1",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node ./dist/src/editor/main.js",
+    "test": "node --inspect --loader ts-node/esm ./test/test.ts",
+    "clean": "rm -r ./dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ejrbuss/prognosis.git"
+  },
+  "author": "Eric Buss (root@ejrbuss.net)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ejrbuss/prognosis/issues"
+  },
+  "homepage": "https://github.com/ejrbuss/prognosis#readme",
+  "devDependencies": {
+    "@types/node": "^16.11.6",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4"
+  }
 }
