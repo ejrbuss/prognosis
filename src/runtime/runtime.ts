@@ -2,10 +2,19 @@ import type { Scene } from "./scene.js";
 import type { Task } from "./task.js";
 
 import { Signals } from "./signal.js";
-import { Cancelled, Deferred } from "../common/common.js";
+import {
+	Cancelled,
+	deferredPromise,
+	DeferredPromise,
+} from "../common/common.js";
+
+interface ChangeSceneRequest {
+	scene: Scene;
+	toResolve: DeferredPromise<void>;
+}
 
 let now!: number;
-let deferredNextScene: Deferred<Scene, void> | undefined;
+let changeSceneRequest: ChangeSceneRequest | undefined;
 let activeScene!: Scene;
 let scheduledTasks: Task[] = [];
 // let project!: Project;
@@ -33,17 +42,17 @@ function loop() {
 	const deltaMs = now - lastFrame;
 
 	// Handle scene change
-	if (deferredNextScene) {
-		const nextScene = deferredNextScene.input;
+	if (changeSceneRequest) {
 		activeScene.broadcast(Signals.SceneStop);
-		activeScene = nextScene;
+		activeScene = changeSceneRequest.scene;
 		activeScene.broadcast(Signals.SceneStart);
-		deferredNextScene.resolve();
+		changeSceneRequest.toResolve.resolve();
+		changeSceneRequest = undefined;
 	}
 
 	// Update all scheduled tasks
 	scheduledTasks = scheduledTasks.filter((task) => {
-		task.tryUpdate(deltaMs);
+		task.update(deltaMs);
 		return (task.running = !task.done);
 	});
 
@@ -70,15 +79,22 @@ export class Runtime {
 	}
 
 	static async changeScene(scene: Scene) {
-		if (deferredNextScene) {
-			deferredNextScene.reject(new Cancelled());
+		if (changeSceneRequest) {
+			changeSceneRequest.toResolve.reject(new Cancelled());
 		}
-		await (deferredNextScene = new Deferred(scene));
+		changeSceneRequest = {
+			scene,
+			toResolve: deferredPromise(),
+		};
+		await changeSceneRequest.toResolve;
 	}
 
 	static schedule(task: Task) {
-		scheduledTasks.push(task);
-		task.running = true;
+		const index = scheduledTasks.indexOf(task);
+		if (index === -1) {
+			scheduledTasks.push(task);
+			task.running = true;
+		}
 	}
 
 	static cancel(task: Task) {

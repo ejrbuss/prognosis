@@ -6,3 +6,12 @@ export class Transform extends Component {
 	scale: Vector = new Vector(1);
 	rotation: number = 0;
 }
+
+/*
+
+id : (a) -> a forall a
+id = (a) -> a
+
+nth : (Vec a n, m) -> forall a, where m < n
+nth = (v, m) -> Ptr.Add(v, m)
+*/

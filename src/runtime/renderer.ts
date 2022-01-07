@@ -13,6 +13,6 @@ export class Renderer {
 	constructor(gl: WebGL2RenderingContext) {}
 	buffer(command: Command) {}
 	flush(transformData: Float32Array) {}
-	postProcess(program: ProgramInterface) {}
+	process(program: ProgramInterface) {}
 	swap() {}
 }

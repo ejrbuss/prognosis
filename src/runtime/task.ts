@@ -1,27 +1,32 @@
-export class Task extends Promise<void> {
+export class Task {
 	done: boolean = false;
 	elapsedMs: number = 0;
 	running: boolean = false;
-	resolve!: () => void;
-	reject!: (reason: any) => void;
+	update: (deltaMs: number) => unknown;
+	completion: Promise<void>;
 
-	constructor(public update: (deltaMs: number) => unknown) {
-		super((resolve, reject) => {
-			this.resolve = resolve;
-			this.reject = reject;
+	constructor(update: (deltaMs: number) => unknown) {
+		let taskResolve!: () => void;
+		let taskReject!: (reason: any) => void;
+		this.completion = new Promise((resolve, reject) => {
+			taskResolve = resolve;
+			taskReject = reject;
 		});
-	}
-
-	tryUpdate(deltaMs: number) {
-		if (this.done) {
-			return;
-		}
-		this.elapsedMs += deltaMs;
-		try {
-			this.update(deltaMs);
-		} catch (error) {
-			this.reject(error);
-			this.done = true;
-		}
+		this.update = (deltaMs) => {
+			if (this.done) {
+				taskResolve();
+				return;
+			}
+			try {
+				this.elapsedMs += deltaMs;
+				update(deltaMs);
+				if (this.done) {
+					taskResolve();
+				}
+			} catch (error) {
+				taskReject(error);
+				this.done = true;
+			}
+		};
 	}
 }

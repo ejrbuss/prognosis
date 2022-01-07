@@ -1,3 +1,18 @@
+const TextureUnits = [
+	WebGL2RenderingContext.TEXTURE0,
+	WebGL2RenderingContext.TEXTURE1,
+	WebGL2RenderingContext.TEXTURE2,
+	WebGL2RenderingContext.TEXTURE3,
+	WebGL2RenderingContext.TEXTURE4,
+	WebGL2RenderingContext.TEXTURE5,
+	WebGL2RenderingContext.TEXTURE6,
+	WebGL2RenderingContext.TEXTURE7,
+];
+
+export const MaxTextures = TextureUnits.length;
+
+export class WebGLError extends Error {}
+
 export class UniformInterface {
 	constructor(
 		public name: string,
@@ -16,7 +31,6 @@ export class AttributeInterface {
 }
 
 export class ProgramInterface {
-	gl: WebGL2RenderingContext;
 	program: WebGLProgram;
 	vao: WebGLVertexArrayObject;
 	uniforms: Record<string, UniformInterface> = {};
@@ -34,7 +48,6 @@ export class ProgramInterface {
 		if (!vao) {
 			throw new Error("Failed to create vao!");
 		}
-		this.gl = gl;
 		this.program = program;
 		this.vao = vao;
 		gl.bindVertexArray(vao);
@@ -56,7 +69,9 @@ export function createShader(
 	gl.shaderSource(shader, source);
 	gl.compileShader(shader);
 	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-		throw new Error(gl.getShaderInfoLog(shader) ?? "Failed to compile shader!");
+		throw new WebGLError(
+			gl.getShaderInfoLog(shader) ?? "Failed to compile shader!"
+		);
 	}
 	return shader;
 }
@@ -68,13 +83,15 @@ export function createProgram(
 ): WebGLProgram {
 	const program = gl.createProgram();
 	if (!program) {
-		throw new Error("Failed to create program!");
+		throw new WebGLError("Failed to create program!");
 	}
 	gl.attachShader(program, vertexShader);
 	gl.attachShader(program, fragmentShader);
 	gl.linkProgram(program);
 	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-		throw new Error(gl.getProgramInfoLog(program) ?? "Failed to link program!");
+		throw new WebGLError(
+			gl.getProgramInfoLog(program) ?? "Failed to link program!"
+		);
 	}
 	return program;
 }
@@ -121,7 +138,7 @@ export function createAttributeInterfaces(
 		const location = gl.getAttribLocation(program, info.name);
 		const buffer = gl.createBuffer();
 		if (!buffer) {
-			throw new Error("Failed to create buffer!");
+			throw new WebGLError("Failed to create buffer!");
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 		gl.vertexAttribPointer(location, info.size, gl.FLOAT, false, 0, 0);
@@ -159,6 +176,135 @@ export function modifyFunctionFor(
 		case WebGL2RenderingContext.FLOAT_MAT4:
 			return (data) => gl.uniformMatrix4fv(location, false, data);
 		default:
-			throw new Error(`Unsupported webgl type: ${type.toString(16)}`);
+			throw new WebGLError(`Unsupported webgl type: ${type.toString(16)}!`);
 	}
+}
+
+export function createTexture(
+	gl: WebGL2RenderingContext,
+	source: TexImageSource
+): WebGLTexture {
+	const texture = gl.createTexture();
+	if (!texture) {
+		throw new WebGLError("Failed to create texture!");
+	}
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+	gl.bindTexture(gl.TEXTURE_2D, null);
+	return texture;
+}
+
+export function createTemptyTexture(
+	gl: WebGL2RenderingContext,
+	width: number,
+	height: number
+): WebGLTexture {
+	const pixels = new Uint8Array(4 * width * height);
+	pixels.fill(255);
+	const texture = gl.createTexture();
+	if (!texture) {
+		throw new WebGLError("Failed to create texture!");
+	}
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texImage2D(
+		gl.TEXTURE0,
+		0,
+		gl.RGBA,
+		width,
+		height,
+		0,
+		gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		pixels
+	);
+	gl.bindTexture(gl.TEXTURE_2D, null);
+	return texture;
+}
+
+export function destroyTexture(
+	gl: WebGL2RenderingContext,
+	texture: WebGLTexture
+) {
+	gl.deleteTexture(texture);
+}
+
+export function createFrameBuffer(
+	gl: WebGL2RenderingContext,
+	texture: WebGLTexture
+): WebGLFramebuffer {
+	const frameBuffer = gl.createFramebuffer();
+	if (!frameBuffer) {
+		throw new WebGLError("Failed to create framebuffer!");
+	}
+	gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+	gl.framebufferTexture2D(
+		gl.FRAMEBUFFER,
+		gl.COLOR_ATTACHMENT0,
+		gl.TEXTURE_2D,
+		texture,
+		0
+	);
+	if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+		throw new WebGLError("Failed to create framebuffer!");
+	}
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	return frameBuffer;
+}
+
+export function draw(
+	gl: WebGL2RenderingContext,
+	frameBuffer: WebGLFramebuffer | null,
+	programInterface: ProgramInterface,
+	uniformData: Record<string, Float32Array>,
+	attributeData: Record<string, Float32Array>,
+	textures: WebGLTexture[],
+	count: number
+) {
+	// bind
+	gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+	gl.useProgram(programInterface.program);
+	gl.bindVertexArray(programInterface.vao);
+
+	const uniforms = programInterface.uniforms;
+	for (const name in uniforms) {
+		const data = uniformData[name];
+		if (data) {
+			uniforms[name].modify(data);
+		}
+	}
+
+	const attributes = programInterface.attributes;
+	for (const name in attributes) {
+		const data = attributeData[name];
+		if (data) {
+			const buffer = attributes[name].buffer;
+			gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+			gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		}
+	}
+
+	for (const i in textures) {
+		const texture = textures[i];
+		const textureUnit = TextureUnits[i];
+		gl.activeTexture(textureUnit);
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+	}
+
+	// draw
+	gl.drawArrays(gl.TRIANGLES, 0, count);
+
+	// unbind
+	gl.bindVertexArray(null);
+	gl.useProgram(null);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 }

@@ -160,17 +160,17 @@ export async function importFromRoot(url: string): Promise<unknown> {
 	return await import(`../../${url}`);
 }
 
-export class Deferred<I, O> extends Promise<O> {
-	resolve!: (value: O) => void;
-	reject!: (reason: any) => void;
-
-	constructor(public input: I) {
-		super((resolve, reject) => {
-			this.resolve = resolve;
-			this.reject = reject;
-		});
-	}
+export interface DeferredPromise<T> extends Promise<T> {
+	resolve: (value: T) => void;
+	reject: (reason: any) => void;
 }
 
-export class FailedAssertion extends Error {}
+export function deferredPromise<T>(): DeferredPromise<T> {
+	const deferredPromise = new Promise((resolve, reject) => {
+		deferredPromise.resolve = resolve;
+		deferredPromise.reject = reject;
+	}) as DeferredPromise<T>;
+	return deferredPromise;
+}
+
 export class Cancelled extends Error {}
