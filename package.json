@@ -4,9 +4,9 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "start": "npm run build && node ./dist/src/editor/main.js",
-    "test": "node --inspect --loader ts-node/esm ./test/test.ts",
+    "build": "tsc && node ./dist/engine/build.js",
+    "serve": "npm run build && node ./dist/engine/serve.js",
+    "watch": "npm run build && node ./dist/engine/watch.js",
     "clean": "rm -r ./dist"
   },
   "repository": {
@@ -14,7 +14,6 @@
     "url": "git+https://github.com/ejrbuss/prognosis.git"
   },
   "author": "Eric Buss (root@ejrbuss.net)",
-  "license": "MIT",
   "bugs": {
     "url": "https://github.com/ejrbuss/prognosis/issues"
   },
