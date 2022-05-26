@@ -103,4 +103,4 @@ typings/
 .tern-port
 .vscode/
 
-target
+*.DS_Store

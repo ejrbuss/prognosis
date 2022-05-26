@@ -1,4 +1,4 @@
-import { assertSchema, SchemaToType } from "./schema.js";
+import { assertSchema, SchemaType } from "./schema.js";
 import { Observable } from "./observable.js";
 
 const ProjectSchema = {
@@ -11,7 +11,7 @@ const ProjectSchema = {
 };
 
 const ProjectClass = class Project extends Observable<
-	SchemaToType<typeof ProjectSchema>
+	SchemaType<typeof ProjectSchema>
 > {
 	async reload() {
 		const project = await (await fetch("/project.json")).json();

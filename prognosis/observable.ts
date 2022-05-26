@@ -1,33 +1,38 @@
-export type Subscriber<T> = (t: T) => any;
+export type Subscriber<T> = (newValue: T, lastValue?: T) => any;
 
-export class SubscriptionToken {}
+export class Token {}
 
 export class Observable<T> {
-	private subscribers = new Map<SubscriptionToken, Subscriber<T>>();
+	subscribers: [Subscriber<T>, Token][] = [];
+	value?: T;
 
-	constructor(private currentValue: T | undefined = undefined) {}
+	constructor(value?: T) {
+		this.value = value;
+	}
 
-	update(nextValue: T) {
-		this.currentValue = nextValue;
-		for (const subscriber of this.subscribers.values()) {
-			subscriber(this.currentValue);
+	update(newValue: T) {
+		const lastValue = this.value;
+		this.value = newValue;
+		this.subscribers.forEach(([sub, _]) => sub(newValue, lastValue));
+	}
+
+	subscribe(subscriber: Subscriber<T>): Token {
+		const token = new Token();
+		this.subscribers.push([subscriber, token]);
+		if (this.value !== undefined) {
+			subscriber(this.value as T);
 		}
+		return token;
 	}
 
-	poll(): T | undefined {
-		return this.currentValue;
-	}
-
-	subscribe(subscriber: Subscriber<T>): SubscriptionToken {
-		const subscriptionToken = new SubscriptionToken();
-		this.subscribers.set(subscriptionToken, subscriber);
-		if (this.currentValue !== undefined) {
-			subscriber(this.currentValue);
+	unsubcribe(tokenToUnsubscribe: Token): boolean {
+		const index = this.subscribers.findIndex(
+			([_, token]) => token === tokenToUnsubscribe
+		);
+		if (index >= 0) {
+			this.subscribers.splice(index, 1);
+			return true;
 		}
-		return subscriptionToken;
-	}
-
-	unsubcribe(subscriptionToken: SubscriptionToken): boolean {
-		return this.subscribers.delete(subscriptionToken);
+		return false;
 	}
 }

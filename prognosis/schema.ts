@@ -1,11 +1,19 @@
+export interface SchemaRecord {
+	[key: string]: Schema;
+}
+
 export type Schema =
 	| BooleanConstructor
 	| NumberConstructor
 	| StringConstructor
 	| Schema[]
-	| { [_: string]: Schema };
+	| SchemaRecord;
 
-export type SchemaToType<S extends Schema> = S extends undefined
+type SchemaRecordType<S extends SchemaRecord> = {
+	[K in keyof S]: SchemaType<S[K]>;
+};
+
+export type SchemaType<S extends Schema> = S extends undefined
 	? undefined
 	: S extends BooleanConstructor
 	? boolean
@@ -14,15 +22,15 @@ export type SchemaToType<S extends Schema> = S extends undefined
 	: S extends StringConstructor
 	? string
 	: S extends Schema[]
-	? SchemaToType<S[number]>[]
-	: S extends { [_: string]: Schema }
-	? { [K in keyof S]: SchemaToType<S[K]> }
+	? SchemaType<S[number]>[]
+	: S extends SchemaRecord
+	? SchemaRecordType<S>
 	: never;
 
 export function checkSchema<S extends Schema>(
 	schema: S,
 	value: unknown
-): value is SchemaToType<S> {
+): value is SchemaType<S> {
 	if (schema === Boolean) {
 		return typeof value === "boolean";
 	}
@@ -59,7 +67,7 @@ export function checkSchema<S extends Schema>(
 export function assertSchema<S extends Schema>(
 	schema: S,
 	value: unknown
-): asserts value is SchemaToType<S> {
+): asserts value is SchemaType<S> {
 	if (schema === Boolean) {
 		if (typeof value !== "boolean") {
 			throw new Error();

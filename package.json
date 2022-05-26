@@ -4,10 +4,12 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "build": "tsc && node ./dist/prognosis/build.js",
-    "serve": "tsc && node ./dist/prognosis/serve.js",
-    "watch": "tsc && node ./dist/prognosis/watch.js",
-    "clean": "rm -r ./dist"
+    "test": "jest",
+    "clean": "rm -r ./dist",
+    "build": "npx tsc && node ./dist/prognosis/dev/build.js",
+    "serve": "npm run build && node ./dist/prognosis/dev/serve.js",
+    "watch": "npm run build && node ./dist/prognosis/dev/watch.js",
+    "release": "npm run build && zip -r release.zip -x *.js.map -x *.tsbuildinfo -x **/prognosis/dev/*"
   },
   "repository": {
     "type": "git",
@@ -19,7 +21,10 @@
   },
   "homepage": "https://github.com/ejrbuss/prognosis#readme",
   "devDependencies": {
+    "@types/jest": "^27.5.1",
     "@types/node": "^16.11.6",
+    "jest": "^28.1.0",
+    "ts-jest": "^28.0.3",
     "ts-node": "^10.4.0",
     "typescript": "^4.4.4"
   }

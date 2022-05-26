@@ -1,57 +1,62 @@
-import { Color } from "./color.js";
-import { Deferred } from "./deferred.js";
+import { Scene } from "./core.js";
 import { Graphics } from "./graphics.js";
 import { Keyboard } from "./keyboard.js";
 import { Mouse } from "./mouse.js";
 import { Observable } from "./observable.js";
-import { Scene } from "./scene.js";
+import { Project } from "./project.js";
 import { Time } from "./time.js";
-import { Tween } from "./tween.js";
 
 const RuntimeClass = class Runtime {
 	running: boolean = true;
-	currentScene: Scene = new Scene();
-	sceneTransition?: Deferred<void>;
-	updateEvents: Observable<void> = new Observable();
-	renderEvents: Observable<void> = new Observable();
+	currentScene: Observable<Scene> = new Observable<Scene>();
+	events = {
+		start: new Observable<void>(),
+		end: new Observable<void>(),
+		update: new Observable<void>(),
+		sceneStart: new Observable<Scene>(),
+		sceneEnd: new Observable<Scene>(),
+	};
+
+	constructor() {
+		Project.subscribe((_) => {});
+		this.events.start.update();
+		this.currentScene.subscribe((scene, lastScene) => {
+			if (scene !== lastScene) {
+				lastScene && this.events.sceneEnd.update(lastScene);
+				this.events.sceneStart.update(scene);
+			}
+		});
+		this.currentScene.update(new Scene("root"));
+	}
 
 	start() {
+		Time.start();
 		this.scheduleNextUpdate();
 	}
 
 	update() {
-		// Update
 		Time.update();
 		Mouse.update();
 		Keyboard.update();
-		this.updateEvents.update();
-		// Render
+		this.events.update.update();
 		Graphics.clear();
-		this.renderEvents.update();
-		if (!this.sceneTransition && Keyboard.Space) {
-			this.sceneTransition = new Tween({
-				duration: 2,
-				step: (t) => {
-					Graphics.context.fillStyle = new Color(1 - t).rgba();
-					Graphics.context.fillRect(
-						0,
-						0,
-						Graphics.canvas.width,
-						Graphics.canvas.height
-					);
-				},
-				onEnd: () => {
-					this.sceneTransition = undefined;
-				},
-			});
+
+		const scene = this.currentScene.value;
+		if (scene) {
+			const ctx = Graphics.context;
+			ctx.save();
+			ctx.transform(...scene.camera.toArray());
+			ctx.restore();
 		}
-		// Loop
 		this.scheduleNextUpdate();
 	}
 
 	private scheduleNextUpdate() {
 		if (this.running) {
 			requestAnimationFrame(this.update.bind(this));
+		} else {
+			this.events.sceneEnd.update(this.currentScene.value as Scene);
+			this.events.end.update();
 		}
 	}
 };
