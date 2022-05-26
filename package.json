@@ -4,9 +4,9 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "build": "tsc && node ./dist/engine/build.js",
-    "serve": "npm run build && node ./dist/engine/serve.js",
-    "watch": "npm run build && node ./dist/engine/watch.js",
+    "build": "tsc && node ./dist/prognosis/build.js",
+    "serve": "tsc && node ./dist/prognosis/serve.js",
+    "watch": "tsc && node ./dist/prognosis/watch.js",
     "clean": "rm -r ./dist"
   },
   "repository": {

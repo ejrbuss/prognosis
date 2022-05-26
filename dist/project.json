@@ -1,0 +1,8 @@
+{
+	"title": "demo",
+	"gameCanvas": {
+		"width": 1280,
+		"height": 720,
+		"antiAliasing": true
+	}
+}

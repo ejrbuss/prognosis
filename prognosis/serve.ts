@@ -1,10 +1,11 @@
 import http from "http";
 import path from "path";
 import fs from "fs/promises";
+import "./logging.js";
 
 const Host = "localhost";
 const Port = 8080;
-const RootPath = process.cwd();
+const RootPath = path.join(process.cwd(), "dist");
 
 const ExtensionToContentType: Record<string, string> = {
 	".html": "text/html",
@@ -16,9 +17,9 @@ const ExtensionToContentType: Record<string, string> = {
 	".wav": "audio/wav",
 };
 
-export function startServer(): http.Server {
+export function serve(): http.Server {
 	const server = http.createServer(async (request, response) => {
-		console.log(request.url);
+		console.log(request.method, request.url);
 		let filePath = path.resolve(RootPath + request.url);
 		if (!filePath.startsWith(RootPath)) {
 			response.writeHead(404);
@@ -54,5 +55,5 @@ export function startServer(): http.Server {
 }
 
 if (import.meta.url.endsWith(process.argv[1])) {
-	startServer();
+	serve();
 }
