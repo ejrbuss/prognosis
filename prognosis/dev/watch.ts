@@ -25,7 +25,7 @@ export function spawn(source: string, command: string) {
 
 const IgnoredFiles = new Set([
 	path.join("dist", "index.html"),
-	path.join("dist", "project.json"),
+	path.join("dist", "prognosis.json"),
 	path.join("dist", "tsconfig.tsbuildinfo"),
 ]);
 

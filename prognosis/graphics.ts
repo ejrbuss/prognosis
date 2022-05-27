@@ -12,10 +12,10 @@ const GraphicsClass = class Graphics {
 			throw new Error("Failed to created CanvasRenderingContext2D for canvas!");
 		}
 		this.context = context;
-		Project.subscribe((project) => {
-			this.canvas.width = project.gameCanvas.width;
-			this.canvas.height = project.gameCanvas.height;
-			this.canvas.style.imageRendering = project.gameCanvas.antiAliasing
+		Project.configUpdates.subscribe((config) => {
+			this.canvas.width = config.gameCanvas.width;
+			this.canvas.height = config.gameCanvas.height;
+			this.canvas.style.imageRendering = config.gameCanvas.antiAliasing
 				? "auto"
 				: "pixelated";
 			this.resize();

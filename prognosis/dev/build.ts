@@ -2,15 +2,15 @@ import fs from "fs/promises";
 import path from "path";
 import "./logging.js";
 
-const ProjectConfigPath = path.join(process.cwd(), "project.json");
+const ConfigPath = path.join(process.cwd(), "prognosis.json");
 const DistPath = path.join(process.cwd(), "dist");
-const DistProjectConfigPath = path.join(DistPath, "project.json");
+const DistConfigPath = path.join(DistPath, "prognosis.json");
 const DistIndexPath = path.join(DistPath, "index.html");
 
 export async function build() {
-	const projectConfigsource = await fs.readFile(ProjectConfigPath, "utf8");
+	const projectConfigsource = await fs.readFile(ConfigPath, "utf8");
 	const projectConfig = JSON.parse(projectConfigsource);
-	await fs.writeFile(DistProjectConfigPath, projectConfigsource);
+	await fs.writeFile(DistConfigPath, projectConfigsource);
 	const sources = ["prognosis/main.js"];
 	await fs.writeFile(
 		DistIndexPath,

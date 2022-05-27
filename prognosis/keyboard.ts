@@ -1,4 +1,4 @@
-enum Key {
+export enum Key {
 	Escape = "Escape",
 	Control = "Control",
 	Alt = "Alt",
@@ -61,22 +61,83 @@ enum Key {
 	Down = "Down",
 }
 
-const EventKeyToKey: Record<string, Key> = {
+// prettier-ignore
+const KeyToKey: Partial<Record<string, Key>> = {
+	"Escape": Key.Escape,
+	"Control": Key.Control,
+	"Alt": Key.Alt,
+	"Meta": Key.Meta,
+	"Shift": Key.Shift,
+	"Tab": Key.Tab,
+	"Backspace": Key.Backspace,
+	"Enter": Key.Enter,
 	" ": Key.Space,
-	"!": Key.Num1,
-	"@": Key.Num2,
-	"#": Key.Num3,
-	$: Key.Num4,
-	"%": Key.Num5,
-	"^": Key.Num6,
-	"&": Key.Num7,
-	"*": Key.Num8,
-	"(": Key.Num9,
-	")": Key.Num0,
+	"1": Key.Num1,
+	"2": Key.Num2,
+	"3": Key.Num3,
+	"4": Key.Num4,
+	"5": Key.Num5,
+	"6": Key.Num6,
+	"7": Key.Num7,
+	"8": Key.Num8,
+	"9": Key.Num9,
+	"0": Key.Num0,
+	"Q": Key.Q,
+	"q": Key.Q,
+	"W": Key.W,
+	"w": Key.W,
+	"E": Key.E,
+	"e": Key.E,
+	"R": Key.R,
+	"r": Key.R,
+	"T": Key.T,
+	"t": Key.T,
+	"Y": Key.Y,
+	"y": Key.Y,
+	"U": Key.U,
+	"u": Key.U,
+	"I": Key.I,
+	"i": Key.I,
+	"O": Key.O,
+	"o": Key.O,
+	"P": Key.P,
+	"p": Key.P,
+	"A": Key.A,
+	"a": Key.A,
+	"S": Key.S,
+	"s": Key.S,
+	"D": Key.D,
+	"d": Key.D,
+	"F": Key.F,
+	"f": Key.F,
+	"G": Key.G,
+	"g": Key.G,
+	"H": Key.H,
+	"h": Key.H,
+	"J": Key.J,
+	"j": Key.J,
+	"K": Key.K,
+	"k": Key.K,
+	"L": Key.L,
+	"l": Key.L,
+	"Z": Key.Z,
+	"z": Key.Z,
+	"X": Key.X,
+	"x": Key.X,
+	"C": Key.C,
+	"c": Key.C,
+	"V": Key.V,
+	"v": Key.V,
+	"B": Key.B,
+	"b": Key.B,
+	"N": Key.N,
+	"n": Key.N,
+	"M": Key.M,
+	"m": Key.M,
 	"`": Key.Tick,
 	"~": Key.Tick,
 	"-": Key.Dash,
-	_: Key.Dash,
+	"_": Key.Dash,
 	",": Key.Comma,
 	"<": Key.Comma,
 	".": Key.Period,
@@ -95,25 +156,21 @@ const EventKeyToKey: Record<string, Key> = {
 	"|": Key.Backslash,
 	"=": Key.Equals,
 	"+": Key.Equals,
-	ArrowLeft: Key.Left,
-	ArrowRight: Key.Right,
-	Up: Key.Up,
-	Down: Key.Down,
+	"ArrowLeft": Key.Left,
+	"ArrowRight": Key.Right,
+	"ArrowUp": Key.Up,
+	"ArrowDown": Key.Down,
 };
 
-for (const [name, key] of Object.entries(Key) as [string, Key][]) {
-	EventKeyToKey[name] = key;
-	if (name.length === 1) {
-		EventKeyToKey[name.toLowerCase()] = key;
-		EventKeyToKey[name.toUpperCase()] = key;
-	}
-	if (name.startsWith("Num")) {
-		EventKeyToKey[name.replace("Num", "")] = key;
-	}
+export enum KeyState {
+	Released = "Released",
+	Pressed = "Pressed",
+	Held = "Held",
 }
 
 const KeyboardClass = class Keyboard {
 	events: KeyboardEvent[] = [];
+	keyStates: Partial<Record<Key | string, KeyState>> = {};
 
 	constructor() {
 		const pushEvent = (event: KeyboardEvent) => this.events.push(event);
@@ -121,16 +178,46 @@ const KeyboardClass = class Keyboard {
 		window.addEventListener("keyup", pushEvent);
 	}
 
+	keyPressed(key: Key): boolean {
+		return this.keyStates[key] === KeyState.Pressed;
+	}
+
+	keyReleased(key: Key): boolean {
+		return this.keyStates[key] === KeyState.Released;
+	}
+
+	keyUp(key: Key): boolean {
+		return !(key in KeyState);
+	}
+
+	keyDown(key: Key): boolean {
+		const state = this.keyStates[key];
+		return state !== undefined && state !== KeyState.Released;
+	}
+
 	update() {
+		// Update key states
+		for (const key in this.keyStates) {
+			switch (this.keyStates[key]) {
+				case KeyState.Pressed:
+					this.keyStates[key] = KeyState.Held;
+					break;
+				case KeyState.Released:
+					delete this.keyStates[key];
+					break;
+			}
+		}
 		for (const event of this.events) {
-			const key = EventKeyToKey[event.key];
+			const key = KeyToKey[event.key];
 			if (key) {
 				switch (event.type) {
 					case "keydown":
-						(this as any)[key] = true;
+						if (this.keyStates[key] !== KeyState.Held) {
+							this.keyStates[key] = KeyState.Pressed;
+						}
 						break;
 					case "keyup":
-						delete (this as any)[key];
+						this.keyStates[key] = KeyState.Released;
 						break;
 				}
 			}
@@ -139,5 +226,4 @@ const KeyboardClass = class Keyboard {
 	}
 };
 
-export const Keyboard: InstanceType<typeof KeyboardClass> &
-	Record<Key, boolean> = new KeyboardClass() as any;
+export const Keyboard = new KeyboardClass();

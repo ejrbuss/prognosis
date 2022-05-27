@@ -1,3 +1,5 @@
+export type ObservableProperties<T> = { [P in keyof T]: Observable<T[P]> };
+
 export type Subscriber<T> = (newValue: T, lastValue?: T) => any;
 
 export class Token {}

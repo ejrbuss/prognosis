@@ -1,7 +1,5 @@
 const config = {
-	transform: {
-		"\\.[jt]sx?$": "ts-jest",
-	},
+	preset: "ts-jest/presets/default-esm",
 	globals: {
 		"ts-jest": {
 			useESM: true,
@@ -10,7 +8,6 @@ const config = {
 	moduleNameMapper: {
 		"(.+)\\.js": "$1",
 	},
-	extensionsToTreatAsEsm: [".ts"],
 };
 
 export default config;

@@ -1,22 +1,28 @@
 import { assertSchema, SchemaType } from "./schema.js";
 import { Observable } from "./observable.js";
 
-const ProjectSchema = {
+const ConfigSchema = {
 	title: String,
 	gameCanvas: {
 		width: Number,
 		height: Number,
 		antiAliasing: Boolean,
 	},
-};
+} as const;
 
-const ProjectClass = class Project extends Observable<
-	SchemaType<typeof ProjectSchema>
-> {
+export type Config = SchemaType<typeof ConfigSchema>;
+
+const ProjectClass = class Project {
+	configUpdates: Observable<Config> = new Observable();
+
+	get config(): Config {
+		return this.configUpdates.value as any;
+	}
+
 	async reload() {
-		const project = await (await fetch("/project.json")).json();
-		assertSchema(ProjectSchema, project);
-		this.update(project);
+		const config = await (await fetch("/prognosis.json")).json();
+		assertSchema(ConfigSchema, config);
+		this.configUpdates.update(config);
 	}
 };
 

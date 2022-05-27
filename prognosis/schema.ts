@@ -9,13 +9,7 @@ export type Schema =
 	| Schema[]
 	| SchemaRecord;
 
-type SchemaRecordType<S extends SchemaRecord> = {
-	[K in keyof S]: SchemaType<S[K]>;
-};
-
-export type SchemaType<S extends Schema> = S extends undefined
-	? undefined
-	: S extends BooleanConstructor
+export type SchemaType<S extends Schema> = S extends BooleanConstructor
 	? boolean
 	: S extends NumberConstructor
 	? number
@@ -24,7 +18,7 @@ export type SchemaType<S extends Schema> = S extends undefined
 	: S extends Schema[]
 	? SchemaType<S[number]>[]
 	: S extends SchemaRecord
-	? SchemaRecordType<S>
+	? { [K in keyof S]: SchemaType<S[K]> }
 	: never;
 
 export function checkSchema<S extends Schema>(
@@ -109,23 +103,3 @@ export function assertSchema<S extends Schema>(
 	}
 	throw new Error();
 }
-
-/*
-const Transform = Component({
-	x: Number,
-	y: Number.
-});
-
-
-const PlayerControl = Behaviour({
-
-	dependencies: [Transform],
-
-	update() {
-		const t: ComponentToType<Transform> = { x: 0, y: 0 };
-		...
-	}
-
-});
-
-*/

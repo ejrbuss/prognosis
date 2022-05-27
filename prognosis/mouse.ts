@@ -2,7 +2,7 @@ import { Graphics } from "./graphics.js";
 
 const MouseClass = class Mouse {
 	events: MouseEvent[] = [];
-	down: boolean = false;
+	isDown: boolean = false;
 	x: number = 0;
 	y: number = 0;
 	dx: number = 0;
@@ -25,10 +25,10 @@ const MouseClass = class Mouse {
 					newY = event.clientY;
 					break;
 				case "mousedown":
-					this.down = true;
+					this.isDown = true;
 					break;
 				case "mouseup":
-					this.down = false;
+					this.isDown = false;
 					break;
 			}
 		}

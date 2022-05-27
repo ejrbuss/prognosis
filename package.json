@@ -4,7 +4,7 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "test": "jest",
+    "test": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js",
     "clean": "rm -r ./dist",
     "build": "npx tsc && node ./dist/prognosis/dev/build.js",
     "serve": "npm run build && node ./dist/prognosis/dev/serve.js",
