@@ -1,105 +1,118 @@
-export interface SchemaRecord {
-	[key: string]: Schema;
-}
-
-export type Schema =
+type AbstractSchema =
 	| BooleanConstructor
 	| NumberConstructor
 	| StringConstructor
-	| Schema[]
-	| SchemaRecord;
+	| ObjectConstructor
+	| ArrayConstructor
+	| AbstractSchema[]
+	| { [Property: string]: AbstractSchema };
 
-export type SchemaType<S extends Schema> = S extends BooleanConstructor
-	? boolean
-	: S extends NumberConstructor
-	? number
-	: S extends StringConstructor
-	? string
-	: S extends Schema[]
-	? SchemaType<S[number]>[]
-	: S extends SchemaRecord
-	? { [K in keyof S]: SchemaType<S[K]> }
-	: never;
+export type SchemaType<Schema extends AbstractSchema> =
+	Schema extends BooleanConstructor
+		? boolean
+		: Schema extends NumberConstructor
+		? number
+		: Schema extends StringConstructor
+		? string
+		: Schema extends ObjectConstructor
+		? object
+		: Schema extends ArrayConstructor
+		? any[]
+		: Schema extends AbstractSchema[]
+		? SchemaType<Schema[number]>[]
+		: Schema extends Record<string, AbstractSchema>
+		? { [K in keyof Schema]: SchemaType<Schema[K]> }
+		: never;
 
-export function checkSchema<S extends Schema>(
-	schema: S,
-	value: unknown
-): value is SchemaType<S> {
-	if (schema === Boolean) {
-		return typeof value === "boolean";
+class SchemaError extends Error {
+	constructor(
+		readonly path: string[],
+		readonly expected: AbstractSchema,
+		readonly actual: unknown
+	) {
+		super(
+			`Schema expected ${(expected as any).name} at .${path.join(
+				"."
+			)} but found "${actual}"!`
+		);
 	}
-	if (schema === Number) {
-		return typeof value === "number";
-	}
-	if (schema === String) {
-		return typeof value === "string";
-	}
-	if (schema instanceof Array) {
-		if (value instanceof Array) {
-			for (const itemSchema of schema) {
-				for (const itemValue of value) {
-					if (!checkSchema(itemSchema, itemValue)) {
-						return false;
-					}
-				}
-			}
-			return true;
-		}
-		return false;
-	}
-	if (value instanceof Object) {
-		for (const key in schema) {
-			if (!checkSchema((schema as any)[key], (value as any)[key])) {
-				return false;
-			}
-		}
-		return true;
-	}
-	return false;
 }
 
-export function assertSchema<S extends Schema>(
-	schema: S,
-	value: unknown
-): asserts value is SchemaType<S> {
+export function schemaErrors<Schema extends AbstractSchema>(
+	schema: Schema,
+	value: unknown,
+	path: string[] = []
+): SchemaError[] {
 	if (schema === Boolean) {
 		if (typeof value !== "boolean") {
-			throw new Error();
+			return [new SchemaError([...path], schema, value)];
 		}
-		return;
+		return [];
 	}
 	if (schema === Number) {
 		if (typeof value !== "number") {
-			throw new Error();
+			return [new SchemaError([...path], schema, value)];
 		}
-		return;
+		return [];
 	}
 	if (schema === String) {
 		if (typeof value !== "string") {
-			throw new Error();
+			return [new SchemaError([...path], schema, value)];
 		}
-		return;
+		return [];
+	}
+	if (schema === Object) {
+		if (!(value instanceof Object)) {
+			return [new SchemaError([...path], schema, value)];
+		}
+		return [];
+	}
+	if (schema === Array) {
+		if (!(value instanceof Array)) {
+			return [new SchemaError([...path], schema, value)];
+		}
+		return [];
 	}
 	if (schema instanceof Array) {
-		if (value instanceof Array) {
-			for (const itemSchema of schema) {
-				for (const itemValue of value) {
-					if (!checkSchema(itemSchema, itemValue)) {
-						throw new Error();
-					}
-				}
-			}
-			return;
+		if (!(value instanceof Array)) {
+			return [new SchemaError([...path], Array, value)];
 		}
-		throw new Error();
+		const itemSchema = schema[0];
+		return value.flatMap((item, index) => {
+			path.push(index.toString());
+			const errors = schemaErrors(itemSchema, item);
+			path.pop();
+			return errors;
+		});
 	}
-	if (value instanceof Object) {
-		for (const key in schema) {
-			if (!checkSchema((schema as any)[key], (value as any)[key])) {
-				throw new Error();
-			}
-		}
-		return;
+	if (!(value instanceof Object)) {
+		return [new SchemaError([...path], schema, value)];
 	}
-	throw new Error();
+	return Object.keys(schema).flatMap((key) => {
+		path.push(key);
+		const errors = schemaErrors(
+			(schema as any)[key],
+			(value as any)[key],
+			path
+		);
+		path.pop();
+		return errors;
+	});
+}
+
+export function checkSchema<Schema extends AbstractSchema>(
+	schema: Schema,
+	value: unknown
+): value is SchemaType<Schema> {
+	return schemaErrors(schema, value).length === 0;
+}
+
+export function assertSchema<Schema extends AbstractSchema>(
+	schema: Schema,
+	value: unknown
+): asserts value is SchemaType<Schema> {
+	const firstError = schemaErrors(schema, value).pop();
+	if (firstError) {
+		throw firstError;
+	}
 }

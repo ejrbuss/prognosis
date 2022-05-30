@@ -1,76 +1,73 @@
-/*
-sx kx x
-ky sy y
-0  0  1
-*/
+import { Point } from "./point.js";
+
+type TransformComponents = {
+	position: Point;
+	localPosition: Point;
+	scale: Point;
+	localScale: Point;
+	rotation: number;
+	localRotation: number;
+};
 
 export class Transform {
-	sx: number = 1;
-	ky: number = 0;
-	kx: number = 0;
-	sy: number = 1;
-	x: number = 0;
-	y: number = 0;
+	static Identity = new Transform(Point.Origin, new Point(1, 1), 0);
 
-	constructor(properties?: Partial<Transform>) {
-		Object.assign(this, properties);
+	constructor(
+		readonly localPosition: Point,
+		readonly localScale: Point,
+		readonly localRotation: number,
+		readonly parent?: Transform
+	) {}
+
+	get position(): Point {
+		throw new Error("TODO");
 	}
 
-	get array(): [number, number, number, number, number, number] {
-		return [this.sx, this.ky, this.kx, this.sy, this.x, this.y];
+	get scale(): Point {
+		throw new Error("TODO");
 	}
 
-	scale(sx: number, sy: number): Transform {
-		this.sx *= sx;
-		this.sy *= sy;
-		return this;
+	get rotation(): number {
+		throw new Error("TODO");
 	}
 
-	translte(x: number, y: number): Transform {
-		this.x += x;
-		this.y += y;
-		return this;
+	with(components: Partial<TransformComponents>): Transform {
+		return new Transform(
+			components.position ?? this.position,
+			components.scale ?? this.scale,
+			components.rotation ?? this.rotation
+		);
 	}
 
-	rotateTurns(turns: number): Transform {
-		return this.rotateRadians(turns * 2 * Math.PI);
+	get matrix(): [number, number, number, number, number, number] {
+		const c = Math.cos(this.rotation);
+		const s = Math.sin(this.rotation);
+		// prettier-ignore
+		return [
+			c * this.scale.x, -s,                 this.position.x,
+			s,                 c  * this.scale.y, this.position.y,
+		];
 	}
 
-	rotateDegrees(degrees: number): Transform {
-		return this.rotateRadians((degrees / 180) * Math.PI);
+	translateBy(x: number, y: number): Transform {
+		return this.with({
+			position: new Point(this.position.x + x, this.position.y + y),
+		});
 	}
 
-	rotateRadians(radians: number): Transform {
-		const s = Math.sin(radians);
-		const c = Math.cos(radians);
-		const sx = this.sx;
-		const ky = this.ky;
-		const kx = this.kx;
-		const sy = this.sy;
-		const x = this.x;
-		const y = this.y;
-		this.sx = c * sx + s * ky;
-		this.ky = c * kx + s * sy;
-		this.kx = c * x + s * y;
-		this.sy = c * ky - s * sx;
-		this.x = c * sy - s * kx;
-		this.y = c * y - s * x;
-		return this;
+	scaleBy(x: number, y: number = x): Transform {
+		return this.with({ scale: new Point(this.scale.x * x, this.scale.y * y) });
 	}
 
-	transform(transform: Transform): Transform {
-		const sx = this.sx;
-		const ky = this.ky;
-		const kx = this.kx;
-		const sy = this.sy;
-		const x = this.x;
-		const y = this.y;
-		this.sx = transform.sx * sx + transform.kx * ky;
-		this.kx = transform.sx * kx + transform.kx * sy;
-		this.x = transform.sx * x + transform.kx * y + transform.x;
-		this.ky = transform.ky * sx + transform.sy * ky;
-		this.sy = transform.ky * kx + transform.sy * sy;
-		this.y = transform.ky * x + transform.sy * y + transform.y;
-		return this;
+	rotateBy(radians: number): Transform {
+		return this.with({ rotation: this.rotation + radians });
+	}
+
+	rotateAround(origin: Point, radians: number): Transform {
+		throw new Error("TODO");
+	}
+
+	compose(transform: Transform): Transform {
+		throw new Error("TODO");
 	}
 }

@@ -1,4 +1,5 @@
 import { Random } from "./random.js";
+import { Tweenable } from "./tween.js";
 
 type RgbaComponents = {
 	red: number;
@@ -6,6 +7,15 @@ type RgbaComponents = {
 	green: number;
 	alpha: number;
 };
+
+type CmykComponents = {
+	cyan: number;
+	magenta: number;
+	yellow: number;
+	key: number;
+	alpha: number;
+};
+
 type HslaComponents = {
 	hue: number;
 	saturation: number;
@@ -32,10 +42,20 @@ function hueToRgb(t1: number, t2: number, hue: number): number {
 	return t1;
 }
 
-export class Color {
+export class Color implements Tweenable<Color> {
+	static Black = Color.rgb(0, 0, 0);
+	static White = Color.rgb(1, 1, 1);
+	static Transparent = Color.rgba(0, 0, 0, 0);
+	static Red = Color.rgb(1, 0, 0);
+	static Green = Color.rgb(0, 1, 0);
+	static Blue = Color.rgb(0, 0, 1);
+	static Cyan = Color.cmyk(1, 0, 0, 0);
+	static Magenta = Color.cmyk(0, 1, 0, 0);
+	static Yellow = Color.cmyk(0, 0, 1, 0);
+
 	static random(): Color {
 		return Color.hsl(
-			Random.number(),
+			Random.number() * 2 * Math.PI,
 			0.42 + Random.number() * 0.56,
 			0.4 + Random.number() * 0.5
 		);
@@ -88,6 +108,10 @@ export class Color {
 		key: number,
 		alpha: number
 	): Color {
+		cyan = Math.clamp(cyan, 0, 1);
+		magenta = Math.clamp(magenta, 0, 1);
+		yellow = Math.clamp(yellow, 0, 1);
+		key = Math.clamp(key, 0, 1);
 		return Color.rgba(
 			1 - Math.min(1, cyan * (1 - key) + key),
 			1 - Math.min(1, magenta * (1 - key) + key),
@@ -106,7 +130,9 @@ export class Color {
 		lightness: number,
 		alpha: number
 	): Color {
-		hue = hue * 6;
+		hue = ((hue / (2 * Math.PI)) % 1) * 6;
+		saturation = Math.clamp(saturation, 0, 1);
+		lightness = Math.clamp(lightness, 0, 1);
 		const t2 =
 			lightness <= 0.5
 				? lightness * (saturation + 1)
@@ -122,28 +148,50 @@ export class Color {
 
 	constructor(readonly value: number) {}
 
-	with(components: Partial<RgbaComponents> | Partial<HslaComponents>): Color {
+	with(
+		components:
+			| Partial<RgbaComponents>
+			| Partial<CmykComponents>
+			| Partial<HslaComponents>
+	): Color {
+		if ("red" in components || "green" in components || "blue" in components) {
+			return Color.rgba(
+				components.red ?? this.red,
+				components.green ?? this.green,
+				components.blue ?? this.blue,
+				components.alpha ?? this.alpha
+			);
+		}
+		if (
+			"cyan" in components ||
+			"magenta" in components ||
+			"yellow" in components ||
+			"black" in components
+		) {
+			return Color.cmyka(
+				components.cyan ?? this.cyan,
+				components.magenta ?? this.magenta,
+				components.yellow ?? this.yellow,
+				components.key ?? this.key,
+				components.alpha ?? this.alpha
+			);
+		}
 		if (
 			"hue" in components ||
 			"saturation" in components ||
 			"lightness" in components
 		) {
-			const hslaComponents = components;
 			return Color.hsla(
-				hslaComponents.hue ?? this.hue,
-				hslaComponents.saturation ?? this.saturation,
-				hslaComponents.lightness ?? this.lightness,
-				hslaComponents.alpha ?? this.alpha
-			);
-		} else {
-			const rgbaComponents = components as Partial<RgbaComponents>;
-			return Color.rgba(
-				rgbaComponents.red ?? this.red,
-				rgbaComponents.green ?? this.green,
-				rgbaComponents.blue ?? this.blue,
-				rgbaComponents.alpha ?? this.alpha
+				components.hue ?? this.hue,
+				components.saturation ?? this.saturation,
+				components.lightness ?? this.lightness,
+				components.alpha ?? this.alpha
 			);
 		}
+		return new Color(
+			this.value &
+				(0xffffff00 + Math.clamp(components.alpha ?? this.alpha, 0, 1) * 255)
+		);
 	}
 
 	get alpha(): number {
@@ -169,16 +217,12 @@ export class Color {
 	}
 
 	get magenta(): number {
-		const r = this.red;
 		const g = this.green;
-		const b = this.blue;
 		const k = this.key;
 		return k === 1 ? 0 : (1 - g - k) / (1 - k);
 	}
 
 	get yellow(): number {
-		const r = this.red;
-		const g = this.green;
 		const b = this.blue;
 		const k = this.key;
 		return k === 1 ? 0 : (1 - b - k) / (1 - k);
@@ -211,7 +255,7 @@ export class Color {
 		if (isNaN(h)) {
 			h = 0;
 		}
-		return (h / 6) % 1;
+		return ((h / 6) % 1) * 2 * Math.PI;
 	}
 
 	get saturation(): number {
@@ -247,65 +291,32 @@ export class Color {
 		return `#${rr}${gg}${bb}${aa}`;
 	}
 
-	hueRotateRadians(radians: number): Color {
-		return this.hueRotateTurns(radians / (2 * Math.PI));
-	}
-
-	hueRotateDegrees(degrees: number): Color {
-		return this.hueRotateTurns(degrees / 360);
-	}
-
-	hueRotateTurns(turn: number): Color {
-		return Color.hsla(
-			(this.hue + turn) % 1,
-			this.saturation,
-			this.lightness,
-			this.alpha
-		);
+	rotateHue(rads: number): Color {
+		return this.with({ hue: this.hue + rads });
 	}
 
 	complement(): Color {
-		return this.hueRotateTurns(0.5);
+		return this.rotateHue(Math.PI);
 	}
 
 	lighten(ratio: number): Color {
 		const l = this.lightness;
-		return Color.hsla(
-			this.hue,
-			this.saturation,
-			(l + l * ratio) % 1,
-			this.alpha
-		);
+		return this.with({ lightness: l + l * ratio });
 	}
 
 	darken(ratio: number): Color {
 		const l = this.lightness;
-		return Color.hsla(
-			this.hue,
-			this.saturation,
-			(l - l * ratio) % 1,
-			this.alpha
-		);
+		return this.with({ lightness: l - l * ratio });
 	}
 
 	saturate(ratio: number): Color {
 		const s = this.saturation;
-		return Color.hsla(
-			this.hue,
-			(s + s * ratio) % 1,
-			this.lightness,
-			this.alpha
-		);
+		return this.with({ saturation: s + s * ratio });
 	}
 
 	desaturate(ratio: number): Color {
 		const s = this.saturation;
-		return Color.hsla(
-			this.hue,
-			(s - s * ratio) % 1,
-			this.lightness,
-			this.alpha
-		);
+		return this.with({ saturation: s - s * ratio });
 	}
 
 	grayscale(): Color {
@@ -313,7 +324,7 @@ export class Color {
 		return Color.rgba(value, value, value, this.alpha);
 	}
 
-	mix(color: Color, weight: number = 0.5) {
+	mix(color: Color, weight: number = 0.5): Color {
 		const c1 = this.cyan;
 		const m1 = this.magenta;
 		const y1 = this.yellow;
@@ -334,16 +345,8 @@ export class Color {
 			a1 * w1 + a2 * w2
 		);
 	}
-}
 
-export const Colors = {
-	Black: Color.rgb(0, 0, 0),
-	White: Color.rgb(1, 1, 1),
-	Transparent: Color.rgba(0, 0, 0, 0),
-	Red: Color.rgb(1, 0, 0),
-	Green: Color.rgb(0, 1, 0),
-	Blue: Color.rgb(0, 0, 1),
-	Cyan: Color.cmyk(1, 0, 0, 0),
-	Magenta: Color.cmyk(0, 1, 0, 0),
-	Yellow: Color.cmyk(0, 0, 1, 0),
-};
+	lerp(color: Color, progress: number): Color {
+		return this.mix(color, progress);
+	}
+}

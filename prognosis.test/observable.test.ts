@@ -16,7 +16,7 @@ test("Observable#subscribe", () => {
 	const o = new Observable(1);
 	let ref = 0;
 	o.subscribe((value) => (ref = value));
-	expect(ref).toBe(1);
+	expect(ref).toBe(0);
 	o.update(2);
 	expect(ref).toBe(2);
 });

@@ -1,17 +1,26 @@
 import { Graphics } from "./graphics.js";
-import { Keyboard } from "./keyboard.js";
-import { Mouse } from "./mouse.js";
 import { Observable } from "./observable.js";
 import { Scene } from "./scene.js";
-import { Time } from "./time.js";
+import { Mutable } from "./util.js";
 
 const RuntimeClass = class Runtime {
-	running: boolean = true;
-	sceneChanges: Observable<Scene> = new Observable();
-	updates: Observable<void> = new Observable();
+	readonly sceneChanges: Observable<Scene> = new Observable();
+	readonly updates: Observable<void> = new Observable();
+	readonly now: number = 0;
+	readonly dt: number = 0;
+
+	constructor() {
+		this.update = this.update.bind(this);
+		this.sceneChanges.subscribe((newScene, oldScene) => {
+			if (oldScene) {
+				oldScene.stop();
+			}
+			newScene.start();
+		});
+	}
 
 	get scene(): Scene {
-		return this.sceneChanges.value as Scene;
+		return this.sceneChanges.value;
 	}
 
 	set scene(scene: Scene) {
@@ -19,29 +28,21 @@ const RuntimeClass = class Runtime {
 	}
 
 	start() {
-		Time.start();
-		this.scene = new Scene("root");
-		this.scheduleNextUpdate();
+		(this as Mutable<this>).now = performance.now() / 1000;
+		requestAnimationFrame(this.update);
 	}
 
 	update() {
-		Time.update();
-		Mouse.update();
-		Keyboard.update();
+		const newNow = performance.now() / 1000;
+		(this as Mutable<this>).dt = newNow - this.now;
+		(this as Mutable<this>).now = newNow;
 		this.updates.update();
-		// TODO scene should handle rendering not runtime
+		this.scene.update();
+		// this.scene.physicsUpdate();
 		// Graphics.clear();
-		const ctx = Graphics.context;
-		ctx.save();
-		ctx.transform(...this.scene.camera.array);
-		ctx.restore();
-		this.scheduleNextUpdate();
-	}
-
-	private scheduleNextUpdate() {
-		if (this.running) {
-			requestAnimationFrame(this.update.bind(this));
-		}
+		this.scene.render(Graphics.context);
+		// Graphics.push();
+		requestAnimationFrame(this.update);
 	}
 };
 

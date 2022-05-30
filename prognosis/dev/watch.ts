@@ -44,9 +44,10 @@ export async function watch() {
 			continue;
 		}
 		if (
-			change.filename === "project.json" ||
-			change.filename.startsWith("dist") ||
-			change.filename.startsWith("assets")
+			change.filename === "prognosis.json" ||
+			change.filename.startsWith("project") ||
+			change.filename.startsWith("assets") ||
+			change.filename.startsWith("dist")
 		) {
 			if (!deferredBuild) {
 				deferredBuild = setTimeout(() => {

@@ -1,3 +1,5 @@
+import { Runtime } from "./runtime.js";
+
 export enum Key {
 	Escape = "Escape",
 	Control = "Control",
@@ -176,6 +178,7 @@ const KeyboardClass = class Keyboard {
 		const pushEvent = (event: KeyboardEvent) => this.events.push(event);
 		window.addEventListener("keydown", pushEvent);
 		window.addEventListener("keyup", pushEvent);
+		Runtime.updates.subscribe(this.update.bind(this));
 	}
 
 	keyPressed(key: Key): boolean {
@@ -196,7 +199,6 @@ const KeyboardClass = class Keyboard {
 	}
 
 	update() {
-		// Update key states
 		for (const key in this.keyStates) {
 			switch (this.keyStates[key]) {
 				case KeyState.Pressed:
@@ -207,7 +209,7 @@ const KeyboardClass = class Keyboard {
 					break;
 			}
 		}
-		for (const event of this.events) {
+		this.events.forEach((event) => {
 			const key = KeyToKey[event.key];
 			if (key) {
 				switch (event.type) {
@@ -221,7 +223,7 @@ const KeyboardClass = class Keyboard {
 						break;
 				}
 			}
-		}
+		});
 		this.events = [];
 	}
 };

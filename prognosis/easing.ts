@@ -1,7 +1,7 @@
 export type Easing = (x: number) => number;
 
 // https://easings.net
-export namespace Easings {
+export namespace Easing {
 	export function linear(x: number): number {
 		return x;
 	}

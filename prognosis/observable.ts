@@ -1,29 +1,33 @@
-export type ObservableProperties<T> = { [P in keyof T]: Observable<T[P]> };
-
 export type Subscriber<T> = (newValue: T, lastValue?: T) => any;
 
 export class Token {}
 
-export class Observable<T> {
-	subscribers: [Subscriber<T>, Token][] = [];
-	value?: T;
+export class Observable<Target> {
+	subscribers: [Subscriber<Target>, Token][] = [];
+	value: Target;
 
-	constructor(value?: T) {
-		this.value = value;
+	constructor(value?: Target) {
+		this.value = value as Target;
 	}
 
-	update(newValue: T) {
+	get nextUpdate(): Promise<Target> {
+		return new Promise((resolve) => {
+			const token = this.subscribe((value) => {
+				this.unsubcribe(token);
+				resolve(value);
+			});
+		});
+	}
+
+	update(newValue: Target) {
 		const lastValue = this.value;
 		this.value = newValue;
 		this.subscribers.forEach(([sub, _]) => sub(newValue, lastValue));
 	}
 
-	subscribe(subscriber: Subscriber<T>): Token {
+	subscribe(subscriber: Subscriber<Target>): Token {
 		const token = new Token();
 		this.subscribers.push([subscriber, token]);
-		if (this.value !== undefined) {
-			subscriber(this.value as T);
-		}
 		return token;
 	}
 
