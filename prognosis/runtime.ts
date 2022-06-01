@@ -39,7 +39,7 @@ const RuntimeClass = class Runtime {
 		this.updates.update();
 		this.scene.update();
 		// this.scene.physicsUpdate();
-		// Graphics.clear();
+		Graphics.clear();
 		this.scene.render(Graphics.context);
 		// Graphics.push();
 		requestAnimationFrame(this.update);

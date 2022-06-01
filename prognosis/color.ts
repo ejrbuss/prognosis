@@ -1,4 +1,3 @@
-import { Random } from "./random.js";
 import { Tweenable } from "./tween.js";
 
 type RgbaComponents = {
@@ -52,14 +51,6 @@ export class Color implements Tweenable<Color> {
 	static Cyan = Color.cmyk(1, 0, 0, 0);
 	static Magenta = Color.cmyk(0, 1, 0, 0);
 	static Yellow = Color.cmyk(0, 0, 1, 0);
-
-	static random(): Color {
-		return Color.hsl(
-			Random.number() * 2 * Math.PI,
-			0.42 + Random.number() * 0.56,
-			0.4 + Random.number() * 0.5
-		);
-	}
 
 	static rgb255(red: number, green: number, blue: number): Color {
 		return Color.rgba255(red, green, blue, 255);

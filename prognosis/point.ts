@@ -31,6 +31,14 @@ export class Point implements Tweenable<Point> {
 		return new Point(-this.x, -this.y);
 	}
 
+	flipX(): Point {
+		return new Point(-this.x, this.y);
+	}
+
+	flipY(): Point {
+		return new Point(this.x, -this.y);
+	}
+
 	normalized(): Point {
 		let factor = this.magnitudeSquared;
 		if (factor > 0) {

@@ -1,5 +1,8 @@
+import { Point } from "./point.js";
+import { Mutable } from "./util.js";
+
 export abstract class Component {
-	dependencies?: typeof Component[];
+	readonly dependencies: typeof Component[] = [];
 	start?(entity: Entity): void;
 	stop?(entity: Entity): void;
 	enable?(entity: Entity): void;
@@ -16,15 +19,44 @@ export abstract class Component {
 
 export const ComponentsConstructors: Record<string, typeof Component> = {};
 
+export enum EntityState {
+	Running = "Running",
+	Stopped = "Stopped",
+	Disabled = "Disabled",
+}
+
+export enum Space {
+	World = "World",
+	Screen = "Screen",
+}
+
 export class Entity {
-	name: string;
-	components: Component[] = [];
-	children: Entity[] = [];
-	isEnabled: boolean = true;
+	readonly state: EntityState = EntityState.Stopped;
+	readonly name: string;
+	readonly components: Component[] = [];
+	space: Space = Space.World;
+	position: Point = Point.Origin;
+	z: number = 0;
 
 	constructor(name: string) {
 		this.name = name;
 		Entities[name] = this;
+	}
+
+	get x(): number {
+		return this.position.x;
+	}
+
+	set x(x: number) {
+		this.position = this.position.with({ x });
+	}
+
+	get y(): number {
+		return this.position.y;
+	}
+
+	set y(y: number) {
+		this.position = this.position.with({ y });
 	}
 
 	add(component: Component) {
@@ -57,37 +89,52 @@ export class Entity {
 	}
 
 	start() {
+		(this as Mutable<this>).state = EntityState.Running;
 		this.components.forEach((component) => {
-			if (!component.dependencies?.every((dependency) => this.has(dependency)))
-				component.start && component.start(this);
+			const missingDependency = component.dependencies.find(
+				(dependency) => !this.has(dependency)
+			);
+			if (missingDependency !== undefined) {
+				throw new Error(
+					`${component.constructor.name} Component is missing the dependency ${missingDependency.name} Component on entity: ${this.name}`
+				);
+			}
+			component.start && component.start(this);
 		});
 	}
 
 	stop() {
+		(this as Mutable<this>).state = EntityState.Stopped;
 		this.components.forEach((component) => {
 			component.stop && component.stop(this);
 		});
 	}
 
 	update() {
-		this.isEnabled &&
+		this.state === EntityState.Running &&
 			this.components.forEach((component) => {
 				component.update && component.update(this);
 			});
 	}
 
 	enable() {
+		if (this.state === EntityState.Stopped) {
+			return;
+		}
+		(this as Mutable<this>).state = EntityState.Running;
 		this.components.forEach((component) => {
 			component.enable && component.enable(this);
 		});
-		this.isEnabled = true;
 	}
 
 	disable() {
+		if (this.state === EntityState.Stopped) {
+			return;
+		}
+		(this as Mutable<this>).state = EntityState.Disabled;
 		this.components.forEach((component) => {
 			component.disable && component.disable(this);
 		});
-		this.isEnabled = false;
 	}
 
 	render(context: CanvasRenderingContext2D) {

@@ -1,3 +1,6 @@
+import { Color } from "./color.js";
+import { Point } from "./point.js";
+
 const RandomClass = class Random {
 	seed = 0xdead;
 
@@ -19,6 +22,20 @@ const RandomClass = class Random {
 
 	choice<T>(...choices: T[]): T {
 		return choices[this.integer(choices.length)];
+	}
+
+	point(): Point {
+		const x = 0.5 - this.number();
+		const y = 0.5 - this.number();
+		return new Point(x, y).normalized();
+	}
+
+	color(): Color {
+		return Color.hsl(
+			this.number() * 2 * Math.PI,
+			0.42 + this.number() * 0.56,
+			0.4 + this.number() * 0.5
+		);
 	}
 };
 

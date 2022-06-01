@@ -1,33 +1,33 @@
-import { assertSchema, SchemaType } from "./schema.js";
+import { Schema, SchemaType } from "./schema.js";
 import { Observable } from "./observable.js";
 import { Scene, Scenes } from "./scene.js";
-import { Component, Entity } from "./core.js";
+import { Entity } from "./core.js";
 
-const SceneSchema = {
-	name: String,
-};
+const SceneSchema = Schema.object({
+	name: Schema.string,
+});
 
-const ComponentSchema = {
-	name: String,
-};
+const ComponentSchema = Schema.object({
+	name: Schema.string,
+});
 
-const EntitySchema = {
-	name: String,
-	scene: String,
-	components: [ComponentSchema],
-};
+const EntitySchema = Schema.object({
+	name: Schema.string,
+	scene: Schema.string,
+	components: Schema.array(ComponentSchema),
+});
 
-const ConfigSchema = {
-	title: String,
-	startScene: String,
-	gameCanvas: {
-		width: Number,
-		height: Number,
-		antiAliasing: Boolean,
-	},
-	scenes: [SceneSchema],
-	entities: [EntitySchema],
-};
+const ConfigSchema = Schema.object({
+	title: Schema.string,
+	startScene: Schema.string,
+	gameCanvas: Schema.object({
+		width: Schema.number,
+		height: Schema.number,
+		antiAliasing: Schema.boolean,
+	}),
+	scenes: Schema.array(SceneSchema),
+	entities: Schema.array(EntitySchema),
+});
 
 export type Config = SchemaType<typeof ConfigSchema>;
 
@@ -39,8 +39,8 @@ const ProjectClass = class Project {
 	}
 
 	async reload() {
-		const config = await (await fetch("/prognosis.json")).json();
-		assertSchema(ConfigSchema, config);
+		const configJson = await (await fetch("/prognosis.json")).json();
+		const config = ConfigSchema.assert(configJson);
 		this.configUpdates.update(config);
 		this.reloadScenes();
 		this.reloadEntities();
@@ -56,22 +56,6 @@ const ProjectClass = class Project {
 				`Starting scene "${this.config.startScene}" is not defined in prognosis.json!`
 			);
 		}
-		// DEBUG
-		class TestComponent extends Component {
-			updated = false;
-			start() {
-				console.log("Test component started!");
-			}
-			update(entity: Entity) {
-				if (!this.updated) {
-					this.updated = true;
-					console.log("Test component updated!", entity);
-				}
-			}
-		}
-		const e = new Entity("Test");
-		e.add(new TestComponent());
-		startScene.spawn(e);
 	}
 
 	reloadEntities() {

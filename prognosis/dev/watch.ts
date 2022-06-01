@@ -29,7 +29,7 @@ const IgnoredFiles = new Set([
 	path.join("dist", "tsconfig.tsbuildinfo"),
 ]);
 
-const IgnoredExtensions = new Set([".js.map"]);
+const IgnoredExtensions = new Set([".js.map", ".DS_Store"]);
 
 export async function watch() {
 	spawn("tsc", "tsc --watch");

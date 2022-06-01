@@ -10,9 +10,13 @@ const LoggingClass = class Logging {
 		console.log = (...args) => {
 			const now = new Date();
 			let out = format;
-			out = out.replace("{message}", args.join(" "));
 			out = out.replace("{time}", now.toLocaleTimeString());
 			out = out.replace("{date}", now.toLocaleDateString());
+			const newlinePrefix = " ".repeat(out.indexOf("{message}"));
+			out = out.replace(
+				"{message}",
+				args.join(" ").replace(/\n/g, `\n${newlinePrefix}`)
+			);
 			this.rootConsoleLog(out);
 		};
 	}

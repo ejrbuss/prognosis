@@ -1,118 +1,154 @@
-type AbstractSchema =
-	| BooleanConstructor
-	| NumberConstructor
-	| StringConstructor
-	| ObjectConstructor
-	| ArrayConstructor
-	| AbstractSchema[]
-	| { [Property: string]: AbstractSchema };
+export type SchemaType<SchemaType> = SchemaType extends Schema<infer Type>
+	? Type
+	: never;
 
-export type SchemaType<Schema extends AbstractSchema> =
-	Schema extends BooleanConstructor
-		? boolean
-		: Schema extends NumberConstructor
-		? number
-		: Schema extends StringConstructor
-		? string
-		: Schema extends ObjectConstructor
-		? object
-		: Schema extends ArrayConstructor
-		? any[]
-		: Schema extends AbstractSchema[]
-		? SchemaType<Schema[number]>[]
-		: Schema extends Record<string, AbstractSchema>
-		? { [K in keyof Schema]: SchemaType<Schema[K]> }
-		: never;
-
-class SchemaError extends Error {
+export class SchemaError extends Error {
 	constructor(
 		readonly path: string[],
-		readonly expected: AbstractSchema,
+		readonly expected: string,
 		readonly actual: unknown
 	) {
-		super(
-			`Schema expected ${(expected as any).name} at .${path.join(
-				"."
-			)} but found "${actual}"!`
-		);
+		super(`Expected ${expected} at .${path.join(".")} but found: ${actual}`);
 	}
 }
 
-export function schemaErrors<Schema extends AbstractSchema>(
-	schema: Schema,
-	value: unknown,
-	path: string[] = []
-): SchemaError[] {
-	if (schema === Boolean) {
+export class Schema<Type> {
+	static any: Schema<any> = new Schema("any", () => undefined);
+
+	static undefined: Schema<undefined> = new Schema(
+		"undefined",
+		(value, path) => {
+			if (value !== this.undefined) {
+				return new SchemaError(path, "undefined", value);
+			}
+		}
+	);
+
+	static null: Schema<null> = new Schema("null", (value, path) => {
+		if (value !== null) {
+			return new SchemaError(path, "null", value);
+		}
+	});
+
+	static boolean: Schema<boolean> = new Schema("boolean", (value, path) => {
 		if (typeof value !== "boolean") {
-			return [new SchemaError([...path], schema, value)];
+			return new SchemaError(path, "boolean", value);
 		}
-		return [];
-	}
-	if (schema === Number) {
+	});
+
+	static number: Schema<number> = new Schema("number", (value, path) => {
 		if (typeof value !== "number") {
-			return [new SchemaError([...path], schema, value)];
+			return new SchemaError(path, "number", value);
 		}
-		return [];
-	}
-	if (schema === String) {
+	});
+
+	static string: Schema<string> = new Schema("string", (value, path) => {
 		if (typeof value !== "string") {
-			return [new SchemaError([...path], schema, value)];
+			return new SchemaError(path, "string", value);
 		}
-		return [];
-	}
-	if (schema === Object) {
-		if (!(value instanceof Object)) {
-			return [new SchemaError([...path], schema, value)];
-		}
-		return [];
-	}
-	if (schema === Array) {
-		if (!(value instanceof Array)) {
-			return [new SchemaError([...path], schema, value)];
-		}
-		return [];
-	}
-	if (schema instanceof Array) {
-		if (!(value instanceof Array)) {
-			return [new SchemaError([...path], Array, value)];
-		}
-		const itemSchema = schema[0];
-		return value.flatMap((item, index) => {
-			path.push(index.toString());
-			const errors = schemaErrors(itemSchema, item);
-			path.pop();
-			return errors;
+	});
+
+	static array<Type>(itemSchema: Schema<Type>): Schema<Type[]> {
+		return new Schema(`${itemSchema.description}[]`, (value, path) => {
+			if (!(value instanceof Array)) {
+				return new SchemaError(path, "array", value);
+			}
+			return value.find((item, index) =>
+				itemSchema.errorFunction(item, [...path, index.toString()])
+			);
 		});
 	}
-	if (!(value instanceof Object)) {
-		return [new SchemaError([...path], schema, value)];
+
+	static object<Type>(propertySchemas: {
+		[Property in keyof Type]: Schema<Type[Property]>;
+	}): Schema<Type> {
+		const descriptionParts = [];
+		descriptionParts.push("{");
+		for (const property in propertySchemas) {
+			descriptionParts.push(
+				`\t"${property}": ${propertySchemas[property].description},`
+			);
+		}
+		descriptionParts.push("}");
+		return new Schema(`${descriptionParts.join("\n")}`, (value, path) => {
+			if (!(value instanceof Object)) {
+				return new SchemaError(path, "object", value);
+			}
+			for (const property in propertySchemas) {
+				const propertyError = propertySchemas[property].errorFunction(
+					(value as any)[property],
+					[...path, property]
+				);
+				if (propertyError !== undefined) {
+					return propertyError;
+				}
+			}
+		});
 	}
-	return Object.keys(schema).flatMap((key) => {
-		path.push(key);
-		const errors = schemaErrors(
-			(schema as any)[key],
-			(value as any)[key],
-			path
+
+	static record<Type>(itemSchema: Schema<Type>): Schema<Record<string, Type>> {
+		return new Schema(
+			`Record<string, ${itemSchema.description}>`,
+			(value, path) => {
+				if (!(value instanceof Object)) {
+					return new SchemaError(path, "object", value);
+				}
+				for (const property in value) {
+					const propertyError = itemSchema.errorFunction(
+						(value as any)[property],
+						[...path, property]
+					);
+					if (propertyError !== undefined) {
+						return propertyError;
+					}
+				}
+			}
 		);
-		path.pop();
-		return errors;
-	});
-}
+	}
 
-export function checkSchema<Schema extends AbstractSchema>(
-	schema: Schema,
-	value: unknown
-): value is SchemaType<Schema> {
-	return schemaErrors(schema, value).length === 0;
-}
+	static either<Type1, Type2>(
+		schema1: Schema<Type1>,
+		schema2: Schema<Type2>
+	): Schema<Type1 | Type2> {
+		return new Schema(
+			`(${schema1.description} | ${schema2.description})`,
+			(value, path) => {
+				const error1 = schema1.errorFunction(value, path);
+				const error2 = schema2.errorFunction(value, path);
+				if (error1 !== undefined && error2 !== undefined) {
+					return new SchemaError(
+						path,
+						`${schema1.description} or ${schema2.description}`,
+						value
+					);
+				}
+			}
+		);
+	}
 
-export function assertSchema<Schema extends AbstractSchema>(
-	schema: Schema,
-	value: unknown
-): asserts value is SchemaType<Schema> {
-	const firstError = schemaErrors(schema, value).pop();
-	if (firstError) {
-		throw firstError;
+	static optional<Type>(schema: Schema<Type>): Schema<Type | undefined> {
+		return this.either(schema, Schema.undefined);
+	}
+
+	constructor(
+		readonly description: string,
+		readonly errorFunction: (
+			value: unknown,
+			path: string[]
+		) => SchemaError | undefined
+	) {}
+
+	validate(value: unknown): Type | undefined {
+		return this.errorFunction(value, []) === undefined
+			? (value as Type)
+			: undefined;
+	}
+
+	assert(value: unknown): Type {
+		const error = this.errorFunction(value, []);
+		if (error !== undefined) {
+			throw error;
+		}
+		return value as Type;
 	}
 }
