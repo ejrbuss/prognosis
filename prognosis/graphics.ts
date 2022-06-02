@@ -1,45 +1,39 @@
 import { Project } from "./project.js";
 
 const GraphicsClass = class Graphics {
-	canvas: HTMLCanvasElement;
-	context: CanvasRenderingContext2D;
+	readonly canvas: HTMLCanvasElement;
+	readonly container: HTMLElement;
+	readonly context: CanvasRenderingContext2D;
 
 	constructor() {
-		window.addEventListener("resize", this.resize.bind(this));
-		this.canvas = document.getElementById("main-canvas") as HTMLCanvasElement;
+		this.canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
+		this.container = document.getElementById("game-container") as HTMLElement;
+		this.container.addEventListener("resize", this.resize.bind(this));
+		const resizeObserver = new ResizeObserver(this.resize.bind(this));
+		resizeObserver.observe(this.container);
 		const context = this.canvas.getContext("2d");
 		if (!context) {
 			throw new Error("Failed to created CanvasRenderingContext2D for canvas!");
 		}
 		this.context = context;
-
-		Project.configUpdates.subscribe((config) => {
-			context.translate(
-				config.gameCanvas.width / 2,
-				config.gameCanvas.height / 2
-			);
-			this.canvas.width = config.gameCanvas.width;
-			this.canvas.height = config.gameCanvas.height;
-			this.context.imageSmoothingEnabled = config.gameCanvas.antiAliasing;
-			this.canvas.style.imageRendering = config.gameCanvas.antiAliasing
-				? "auto"
-				: "pixelated";
-			this.resize();
-		});
-	}
-
-	clear() {
-		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		context.translate(Project.graphics.width / 2, Project.graphics.height / 2);
+		this.canvas.width = Project.graphics.width;
+		this.canvas.height = Project.graphics.height;
+		this.context.imageSmoothingEnabled = Project.graphics.antiAliasing;
+		this.canvas.style.imageRendering = Project.graphics.antiAliasing
+			? "auto"
+			: "pixelated";
+		this.resize();
 	}
 
 	resize() {
-		let scaledWidth =
-			(window.innerHeight / this.canvas.height) * this.canvas.width;
-		let scaledHeight = window.innerHeight;
-		if (scaledWidth > window.innerWidth) {
-			scaledHeight =
-				(window.innerWidth / this.canvas.width) * this.canvas.height;
-			scaledWidth = window.innerWidth;
+		const maxWidth = this.container.clientWidth;
+		const maxHeight = this.container.clientHeight;
+		let scaledWidth = (maxHeight / this.canvas.height) * this.canvas.width;
+		let scaledHeight = maxHeight;
+		if (scaledWidth > maxWidth) {
+			scaledHeight = (maxWidth / this.canvas.width) * this.canvas.height;
+			scaledWidth = maxWidth;
 		}
 		this.canvas.style.width = scaledWidth + "px";
 		this.canvas.style.height = scaledHeight + "px";

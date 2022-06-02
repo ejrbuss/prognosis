@@ -1,0 +1,114 @@
+:root {
+	--text: rgb(231, 231, 231);
+	--text-subtle: rgb(121, 123, 128);
+	--font-mono: 'Operator Mono', 'Fira Code', 'Courier New', Courier, monospace;
+	--background-primary: rgb(34, 35, 46);
+	--background-secondary: rgb(22, 22, 28);
+	--accent: rgb(253, 67, 119);
+}
+
+body {
+	margin: 0;
+	background: var(--background-primary);
+}
+
+*:focus {
+    outline: none;
+}
+
+#editor-grid {
+	overflow: hidden;
+	display: grid;
+	width: 100vw;
+	height: 100vh;
+}
+
+#toolbar {
+}
+
+#inspector,
+#inspector-gutter,
+#explorer,
+#explorer-gutter {
+	grid-row: span 4;
+}
+
+#game-container {
+	background-color: var(--background-secondary);
+	position: relative;
+	width: 100%;
+	height: 100%;
+}
+
+#game-canvas {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.column-gutter {
+	border-left: 1px solid var(--background-secondary);
+}
+
+.column-gutter:hover {
+	cursor: col-resize;
+}
+
+.row-gutter {
+	border-top: 1px solid var(--background-secondary);
+}
+
+.row-gutter:hover {
+	cursor: row-resize;
+}
+
+h1 {
+	margin: 0;
+	padding: 0.8em;
+	color: var(--text-subtle);
+	font-family: Helvetica, sans-serif;
+	font-weight: 200;
+	font-size: 1em;
+	user-select: none;
+}
+
+#console > h1 {
+	box-shadow: 0 4px 4px rgba(0, 0, 0, 0.2);
+}
+
+#console-output {
+	height: calc(100% - 108px);
+	width: calc(100% - 1em);
+	overflow: scroll;
+	font-size: 1em;
+	font-family: var(--font-mono);
+	color: var(--text);
+	margin-left: 1em;
+	display: block;
+	white-space: pre;
+}
+
+#console-prompt {
+	width: 1em;
+	height: 64px;
+	display: inline-block;
+	font-size: 1em;
+	font-family: var(--font-mono);
+	color: var(--text-subtle);
+	margin: 0;
+	padding-left: 1em;
+}
+
+#console-input {
+	display: inline-block;
+	width: calc(100% - 3em);
+	height: 64px;
+	background-color: var(--background-primary);
+	font-size: 1em;
+	font-family: var(--font-mono);
+	color: var(--text);
+	margin-right: 1em;
+	padding: 0;
+	border: none;
+}

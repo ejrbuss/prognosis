@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Prognosis Editor</title>
+	<link rel="icon" href="./favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="/prognosis/dev/editor.css">
+</head>
+
+<body>
+	<div id="editor-grid" style="
+		grid-template-columns: 1fr 5px 300px 5px 300px;
+		grid-template-rows: 64px 1fr 5px 1fr;">
+		<div id="toolbar"></div>
+		<div id="inspector-gutter" class="column-gutter"></div>
+		<div id="inspector">
+			<h1>INSPECTOR</h1>
+		</div>
+		<div id="explorer-gutter" class="column-gutter"></div>
+		<div id="explorer">
+			<h1>EXPLORER</h1>
+		</div>
+		<div id="preview">
+			<div id="game-container">
+				<canvas id="game-canvas"></canvas>
+			</div>
+		</div>
+		<div id="console-gutter" class="row-gutter"></div>
+		<div id="console">
+			<h1>CONSOLE</h1>
+			<code id="console-output"><br /></code>
+			<span id="console-prompt">></span><input id="console-input" />
+		</div>
+	</div>
+	<script type="module" src="/prognosis/main.js"></script>
+	<script type="module" src="/prognosis/dev/editor.js"></script>
+</body>
+</html>

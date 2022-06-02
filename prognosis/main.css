@@ -1,0 +1,21 @@
+:root {
+	--background-color: #16161c;
+}
+
+body {
+	margin: 0;
+	background-color: var(--background-color);
+}
+
+#game-container {
+	position: relative;
+	width: 100vw;
+	height: 100vh;
+}
+
+#game-canvas {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}

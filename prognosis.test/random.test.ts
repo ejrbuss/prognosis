@@ -1,3 +1,4 @@
+import "../prognosis/math.js";
 import { Random } from "../prognosis/random.js";
 
 test("Random#number", () => {

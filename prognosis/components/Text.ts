@@ -13,7 +13,7 @@ export class Text extends Component {
 	alignment: TextAlignment = TextAlignment.Left;
 	color: Color = Color.Black;
 
-	render(entity: Entity, context: CanvasRenderingContext2D) {
+	render(_entity: Entity, context: CanvasRenderingContext2D) {
 		context.font = this.font;
 		context.fillStyle = this.color.hex;
 		context.textAlign = this.alignment;

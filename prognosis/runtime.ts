@@ -1,30 +1,19 @@
+import { Entity } from "./core.js";
 import { Graphics } from "./graphics.js";
 import { Observable } from "./observable.js";
-import { Scene } from "./scene.js";
+import { Project } from "./project.js";
 import { Mutable } from "./util.js";
 
 const RuntimeClass = class Runtime {
-	readonly sceneChanges: Observable<Scene> = new Observable();
 	readonly updates: Observable<void> = new Observable();
+	readonly lateUpdates: Observable<void> = new Observable();
 	readonly now: number = 0;
 	readonly dt: number = 0;
+	timeScale: number = 1;
+	root!: Entity;
 
 	constructor() {
 		this.update = this.update.bind(this);
-		this.sceneChanges.subscribe((newScene, oldScene) => {
-			if (oldScene) {
-				oldScene.stop();
-			}
-			newScene.start();
-		});
-	}
-
-	get scene(): Scene {
-		return this.sceneChanges.value;
-	}
-
-	set scene(scene: Scene) {
-		this.sceneChanges.update(scene);
 	}
 
 	start() {
@@ -34,14 +23,20 @@ const RuntimeClass = class Runtime {
 
 	update() {
 		const newNow = performance.now() / 1000;
-		(this as Mutable<this>).dt = newNow - this.now;
+		(this as Mutable<this>).dt = (newNow - this.now) * this.timeScale;
 		(this as Mutable<this>).now = newNow;
 		this.updates.update();
-		this.scene.update();
-		// this.scene.physicsUpdate();
-		Graphics.clear();
-		this.scene.render(Graphics.context);
-		// Graphics.push();
+		this.root.update();
+		this.lateUpdates.update();
+		this.root.lateUpdate();
+		// this.root.physicsUpdate();
+		Graphics.context.clearRect(
+			0,
+			0,
+			Project.graphics.width,
+			Project.graphics.height
+		);
+		this.root.render(Graphics.context);
 		requestAnimationFrame(this.update);
 	}
 };

@@ -1,4 +1,5 @@
 import { Schema } from "./schema.js";
+import { Mutable } from "./util.js";
 
 export class SpriteAsset {
 	constructor(readonly bitmap: ImageBitmap, readonly duration: number) {}
@@ -28,15 +29,18 @@ export class AudioAsset {
 
 const AssetsClass = class Assets {
 	private pool: Record<string, Promise<any>> = {};
+	readonly loading: number = 0;
 
 	async loadSprite(imageUrl: string): Promise<SpriteAsset> {
 		if (imageUrl in this.pool) {
 			return this.pool[imageUrl];
 		}
+		(this as Mutable<this>).loading += 1;
 		const htmlImage = new Image();
 		htmlImage.src = imageUrl;
 		await new Promise((resolve) => (htmlImage.onload = resolve));
 		const sprite = await createImageBitmap(htmlImage);
+		(this as Mutable<this>).loading -= 1;
 		return new SpriteAsset(sprite, Infinity);
 	}
 
@@ -47,6 +51,7 @@ const AssetsClass = class Assets {
 		if (sheetUrl in this.pool) {
 			return this.pool[sheetUrl];
 		}
+		(this as Mutable<this>).loading += 1;
 		const spriteAssetPromise = this.loadSprite(iamgeUrl);
 		const spriteSheetJson = await (await fetch(sheetUrl)).json();
 		const spriteSheet = SpriteSheetSchema.assert(spriteSheetJson);
@@ -65,6 +70,7 @@ const AssetsClass = class Assets {
 				frames[frameKey] = new SpriteAsset(bitmap, frame.duration);
 			})
 		);
+		(this as Mutable<this>).loading -= 1;
 		return new SpriteSheetAsset(frames);
 	}
 
@@ -72,9 +78,11 @@ const AssetsClass = class Assets {
 		if (url in this.pool) {
 			return this.pool[url];
 		}
+		(this as Mutable<this>).loading += 1;
 		const htmlAudio = new Audio();
 		htmlAudio.src = url;
 		await new Promise((resolve) => (htmlAudio.onload = resolve));
+		(this as Mutable<this>).loading -= 1;
 		return new AudioAsset(htmlAudio);
 	}
 };

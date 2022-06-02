@@ -1,8 +1,10 @@
 import { Assets } from "../prognosis/assets.js";
+import { Camera } from "../prognosis/camera.js";
 import { Color } from "../prognosis/color.js";
 import { Animation } from "../prognosis/components/animation.js";
 import { Rectangle } from "../prognosis/components/rectangle.js";
 import { Sprite } from "../prognosis/components/sprite.js";
+import { Surface } from "../prognosis/components/surface.js";
 import { Text } from "../prognosis/components/text.js";
 import { Component, Entity, Space } from "../prognosis/core.js";
 import { Key, Keyboard } from "../prognosis/keyboard.js";
@@ -12,28 +14,30 @@ import { Random } from "../prognosis/random.js";
 import { Runtime } from "../prognosis/runtime.js";
 
 const playerSpriteSheetAsset = Assets.loadSpriteSheet(
-	"assets/demo/characters/player.json",
-	"assets/demo/characters/player.png"
+	"/assets/demo/characters/player.json",
+	"/assets/demo/characters/player.png"
 );
 
-const Width = Project.config.gameCanvas.width;
-const Height = Project.config.gameCanvas.height;
+const Width = Project.graphics.width;
+const Height = Project.graphics.height;
 
 const background = new Entity("background");
+background.x = Width / 2;
+background.y = Height / 2;
 const backgroundRectangle = new Rectangle();
 backgroundRectangle.color = Random.color();
 backgroundRectangle.width = Width;
 backgroundRectangle.height = Height;
-background.add(backgroundRectangle);
+background.addComponent(backgroundRectangle);
 background.space = Space.Screen;
 background.z = -100;
-Runtime.scene.spawn(background);
+Runtime.root.addChild(background);
 
 class FpsCounter extends Component {
 	textComponent?: Text;
 
 	start(entity: Entity) {
-		this.textComponent = entity.get(Text);
+		this.textComponent = entity.getComponent(Text);
 	}
 
 	update() {
@@ -45,17 +49,19 @@ class FpsCounter extends Component {
 
 const fpsCounter = new Entity("fps");
 fpsCounter.space = Space.Screen;
-fpsCounter.position = new Point(32, 32);
+fpsCounter.localPosition = new Point(32, 32);
 fpsCounter.z = 100;
-fpsCounter.add(new FpsCounter());
+fpsCounter.addComponent(new FpsCounter());
 const fpsCounterText = new Text();
 fpsCounterText.color = Color.Yellow;
 fpsCounterText.font = "16px monospace";
-fpsCounter.add(fpsCounterText);
-Runtime.scene.spawn(fpsCounter);
+fpsCounter.addComponent(fpsCounterText);
+Runtime.root.addChild(fpsCounter);
 
 class PlayerController extends Component {
 	speed = 200;
+	camera = Runtime.root.getComponent(Surface)?.camera as Camera;
+
 	update(entity: Entity) {
 		let direction = Point.Origin;
 		if (Keyboard.keyDown(Key.W)) {
@@ -71,16 +77,16 @@ class PlayerController extends Component {
 			direction = direction.add(Point.Right);
 		}
 		if (Keyboard.keyDown(Key.Up)) {
-			Runtime.scene.camera.y -= 100 * Runtime.dt;
+			this.camera.y -= 100 * Runtime.dt;
 		}
 		if (Keyboard.keyDown(Key.Down)) {
-			Runtime.scene.camera.y += 100 * Runtime.dt;
+			this.camera.y += 100 * Runtime.dt;
 		}
 		if (Keyboard.keyDown(Key.Left)) {
-			Runtime.scene.camera.x -= 100 * Runtime.dt;
+			this.camera.x -= 100 * Runtime.dt;
 		}
 		if (Keyboard.keyDown(Key.Right)) {
-			Runtime.scene.camera.x += 100 * Runtime.dt;
+			this.camera.x += 100 * Runtime.dt;
 		}
 		if (Keyboard.keyPressed(Key.Equals)) {
 			entity.z += 1;
@@ -97,18 +103,18 @@ class PlayerController extends Component {
 }
 
 const player = new Entity("player");
-player.add(new PlayerController());
+player.addComponent(new PlayerController());
 const playerAnimation = new Animation();
 playerSpriteSheetAsset.then(
 	(asset) => (playerAnimation.spriteSheetAsset = asset)
 );
 playerAnimation.frameKey = "player 0.png";
-player.add(playerAnimation);
+player.addComponent(playerAnimation);
 const playerSprite = new Sprite();
 playerSprite.scale = playerSprite.scale.mul(4);
 playerSprite.debug = true;
-player.add(playerSprite);
-Runtime.scene.spawn(player);
+player.addComponent(playerSprite);
+Runtime.root.addChild(player);
 
 class DummyBouncer extends Component {
 	speed: number = Random.integer(50, 500);
@@ -143,12 +149,42 @@ for (let i = 0; i < DummyCount; i++) {
 		(asset) => (dummyAnimation.spriteSheetAsset = asset)
 	);
 	dummyAnimation.frameKey = "player 0.png";
-	dummy.add(dummyAnimation);
-	dummy.add(new DummyBouncer());
+	dummy.addComponent(dummyAnimation);
+	dummy.addComponent(new DummyBouncer());
 	const dummySprite = new Sprite();
 	dummySprite.scale = dummySprite.scale.mul(Random.integer(1, 6));
-	dummy.add(dummySprite);
-	Runtime.scene.spawn(dummy);
+	dummy.addComponent(dummySprite);
+	Runtime.root.addChild(dummy);
 }
 
+const greenSquare1 = new Entity("greenSquare1");
+greenSquare1.x = -80;
+greenSquare1.z = 3;
+const greenSquare1Rectangle = new Rectangle();
+greenSquare1Rectangle.width = 100;
+greenSquare1Rectangle.height = 100;
+greenSquare1Rectangle.color = Color.Green.with({ alpha: 0.6 });
+greenSquare1.addComponent(greenSquare1Rectangle);
+Runtime.root.addChild(greenSquare1);
+
+const redSquare = new Entity("redSquare1");
+redSquare.z = 2;
+const redSquare1Rectangle = new Rectangle();
+redSquare1Rectangle.width = 100;
+redSquare1Rectangle.height = 100;
+redSquare1Rectangle.color = Color.Red.with({ alpha: 0.6 });
+redSquare.addComponent(redSquare1Rectangle);
+Runtime.root.addChild(redSquare);
+
+const greenSquare2 = new Entity("greenSquare2");
+greenSquare2.x = 80;
+greenSquare2.z = 1;
+const greenSquare2Rectangle = new Rectangle();
+greenSquare2Rectangle.width = 100;
+greenSquare2Rectangle.height = 100;
+greenSquare2Rectangle.color = Color.Green.with({ alpha: 0.6 });
+greenSquare2.addComponent(greenSquare2Rectangle);
+Runtime.root.addChild(greenSquare2);
+
 (window as any).Runtime = Runtime;
+(window as any).Assets = Assets;

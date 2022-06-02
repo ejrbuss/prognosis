@@ -18,7 +18,7 @@ export class Schema<Type> {
 	static undefined: Schema<undefined> = new Schema(
 		"undefined",
 		(value, path) => {
-			if (value !== this.undefined) {
+			if (value !== undefined) {
 				return new SchemaError(path, "undefined", value);
 			}
 		}
@@ -53,9 +53,11 @@ export class Schema<Type> {
 			if (!(value instanceof Array)) {
 				return new SchemaError(path, "array", value);
 			}
-			return value.find((item, index) =>
-				itemSchema.errorFunction(item, [...path, index.toString()])
-			);
+			return value
+				.flatMap((item, index) =>
+					itemSchema.errorFunction(item, [...path, index.toString()])
+				)
+				.shift();
 		});
 	}
 

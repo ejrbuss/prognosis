@@ -7,11 +7,13 @@ export class Rectangle extends Component {
 	height: number = 100;
 	color: Color = Color.Black;
 
-	render(eneity: Entity, context: CanvasRenderingContext2D) {
+	render(_entity: Entity, context: CanvasRenderingContext2D) {
 		context.save();
 		context.rotate(this.rotation);
 		context.fillStyle = this.color.hex;
-		context.fillRect(0, 0, this.width, this.height);
+		const w = this.width;
+		const h = this.height;
+		context.fillRect(-w / 2, -h / 2, w, h);
 		context.restore();
 	}
 }

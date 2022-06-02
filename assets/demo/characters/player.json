@@ -243,6 +243,7 @@
  "meta": {
   "app": "https://www.aseprite.org/",
   "version": "1.2.34.1-arm64",
+  "image": "player.png",
   "format": "I8",
   "size": { "w": 1440, "h": 48 },
   "scale": "1",

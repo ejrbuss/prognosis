@@ -34,7 +34,7 @@ export class Sprite extends Component {
 		}
 	}
 
-	render(_: Entity, context: CanvasRenderingContext2D) {
+	render(_entity: Entity, context: CanvasRenderingContext2D) {
 		const bitmap = this.spriteAsset?.bitmap;
 		if (bitmap !== undefined) {
 			context.save();

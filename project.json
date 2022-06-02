@@ -1,0 +1,19 @@
+{
+	"title": "Demo",
+	"graphics": {
+		"width": 1280,
+		"height": 720,
+		"antiAliasing": false
+	},
+	"root": "root",
+	"entities": [
+		{
+			"name": "root",
+			"components": [
+				{
+					"name": "Surface"
+				}
+			]
+		}
+	]
+}

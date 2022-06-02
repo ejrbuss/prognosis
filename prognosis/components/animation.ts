@@ -9,11 +9,11 @@ export class Animation extends Component {
 	frameKey?: string;
 
 	start(entity: Entity) {
-		this.spriteComponent = entity.get(Sprite);
+		this.spriteComponent = entity.getComponent(Sprite);
 	}
 
 	// TODO this probably needs to be in lateUpdate or similar
-	update() {
+	update(_entity: Entity) {
 		if (
 			this.spriteComponent !== undefined &&
 			this.spriteSheetAsset !== undefined &&

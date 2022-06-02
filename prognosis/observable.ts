@@ -2,15 +2,15 @@ export type Subscriber<T> = (newValue: T, lastValue?: T) => any;
 
 export class Token {}
 
-export class Observable<Target> {
-	subscribers: [Subscriber<Target>, Token][] = [];
-	value: Target;
+export class Observable<Type> {
+	subscribers: [Subscriber<Type>, Token][] = [];
+	value: Type;
 
-	constructor(value?: Target) {
-		this.value = value as Target;
+	constructor(value?: Type) {
+		this.value = value as Type;
 	}
 
-	get nextUpdate(): Promise<Target> {
+	get nextUpdate(): Promise<Type> {
 		return new Promise((resolve) => {
 			const token = this.subscribe((value) => {
 				this.unsubcribe(token);
@@ -19,13 +19,17 @@ export class Observable<Target> {
 		});
 	}
 
-	update(newValue: Target) {
+	update(newValue: Type) {
 		const lastValue = this.value;
 		this.value = newValue;
 		this.subscribers.forEach(([sub, _]) => sub(newValue, lastValue));
 	}
 
-	subscribe(subscriber: Subscriber<Target>): Token {
+	map(transform: (value: Type) => Type) {
+		this.update(transform(this.value));
+	}
+
+	subscribe(subscriber: Subscriber<Type>): Token {
 		const token = new Token();
 		this.subscribers.push([subscriber, token]);
 		return token;
