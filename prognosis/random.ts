@@ -1,5 +1,5 @@
-import { Color } from "./color.js";
-import { Point } from "./point.js";
+import { Color } from "./data/color.js";
+import { Point } from "./data/point.js";
 
 const RandomClass = class Random {
 	seed = 0xdead;

@@ -17,14 +17,6 @@ body {
     outline: none;
 }
 
-.horizontal-gutter {
-	border-top: 1px solid var(--background-secondary);
-}
-
-.vertical-gutter {
-	border-left: 1px solid var(--background-secondary);
-}
-
 #game-container {
 	background-color: var(--background-secondary);
 	position: relative;
@@ -39,6 +31,30 @@ body {
 	transform: translate(-50%, -50%);
 }
 
+.editor {
+	overflow: hidden;
+	display: grid;
+	width: 100vw;
+	height: 100vh;
+}
+
+.gutter.vertical {
+	border-left: 1px solid var(--background-secondary);
+	grid-row: span 4;
+	cursor: col-resize;
+}
+
+.gutter.horizontal {
+	border-top: 1px solid var(--background-secondary);
+	cursor: row-resize;
+}
+
+.preview {
+	background-color: var(--background-secondary);
+}
+
+
+
 .column-gutter {
 	border-left: 1px solid var(--background-secondary);
 }
@@ -46,8 +62,6 @@ body {
 .column-gutter:hover {
 	cursor: col-resize;
 }
-
-
 
 .row-gutter:hover {
 	cursor: row-resize;

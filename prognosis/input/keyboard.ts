@@ -1,4 +1,4 @@
-import { Runtime } from "./runtime.js";
+import { Runtime } from "../runtime.js";
 
 export enum Key {
 	Escape = "Escape",
@@ -178,7 +178,7 @@ const KeyboardClass = class Keyboard {
 		const pushEvent = (event: KeyboardEvent) => this.events.push(event);
 		window.addEventListener("keydown", pushEvent);
 		window.addEventListener("keyup", pushEvent);
-		Runtime.updates.subscribe(this.update.bind(this));
+		Runtime.updates.connect(this.update.bind(this));
 	}
 
 	keyPressed(key: Key): boolean {

@@ -1,7 +1,7 @@
-import { Camera } from "../camera.js";
-import { Color } from "../color.js";
-import { Node } from "../node.js";
-import { Point } from "../point.js";
+import { Camera } from "../data/camera.js";
+import { Color } from "../data/color.js";
+import { Node } from "./node.js";
+import { Point } from "../data/point.js";
 import { Project } from "../project.js";
 
 export class Surface extends Node {

@@ -1,12 +1,13 @@
 import "./math.js";
-import "./keyboard.js";
-import "./mouse.js";
+import "./input/keyboard.js";
+import "./input/mouse.js";
 
-import { Schema } from "./schema.js";
+import { Schema } from "./data/schema.js";
 import { Project } from "./project.js";
-import { Node, NodeTypes } from "./node.js";
-import { Assets } from "./assets.js";
+import { Node, NodeTypes } from "./nodes/node.js";
+import { Resources } from "./resources/resources.js";
 import { Runtime } from "./runtime.js";
+import { NodeTreeResource } from "./resources/nodeTreeResource.js";
 
 // Load dynamic modules
 
@@ -27,5 +28,5 @@ await Promise.all(
 
 // Start runtime
 
-Runtime.root = (await Assets.loadScene(Project.root)).hydrate();
+Runtime.root = (await Resources.load(NodeTreeResource, Project.root)).node;
 Runtime.start();

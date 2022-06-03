@@ -1,4 +1,4 @@
-import { Point } from "./point.js";
+import { Point } from "../data/point.js";
 
 export class Node {
 	#started: boolean = false;
@@ -12,6 +12,10 @@ export class Node {
 
 	constructor(name?: string) {
 		this.name = name ?? this.constructor.name;
+	}
+
+	get started(): boolean {
+		return this.#started;
 	}
 
 	get children(): Readonly<Node[]> {

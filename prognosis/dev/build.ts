@@ -4,7 +4,7 @@ import "./logging.js";
 export async function build() {
 	await fs.mkdir("./dist/editor", { recursive: true });
 	await generateModules();
-	await copyAssets();
+	await copyResources();
 	await safeCopy("./project.json");
 	await safeCopy("./prognosis/main.html", "./dist/index.html");
 	await safeCopy("./prognosis/main.css");
@@ -28,9 +28,9 @@ async function generateModules() {
 	console.log("Generated modules.json");
 }
 
-async function copyAssets() {
-	await fs.mkdir(toDistPath("./assets"), { recursive: true });
-	const { files, directories } = await walk("./assets");
+async function copyResources() {
+	await fs.mkdir(toDistPath("./resources"), { recursive: true });
+	const { files, directories } = await walk("./resources");
 	await Promise.all(directories.map((dir) => safeMkdir(toDistPath(dir))));
 	await Promise.all(files.map((file) => safeCopy(file)));
 }

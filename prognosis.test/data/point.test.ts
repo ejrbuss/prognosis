@@ -1,4 +1,4 @@
-import { Point } from "../prognosis/point.js";
+import { Point } from "../../prognosis/data/point.js";
 
 function expectClosePoints(actual: Point, expected: Point) {
 	expect(actual.x).toBeCloseTo(expected.x);

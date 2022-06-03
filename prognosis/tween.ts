@@ -1,6 +1,8 @@
 import { Easing } from "./easing.js";
-import { Observable, Token } from "./observable.js";
+import { Signal, ConnectionToken } from "./signal.js";
 import { Runtime } from "./runtime.js";
+
+// TODO make Tweens a Node (probably just a simplification of an AnimationNode)
 
 export interface Tweenable<Target> {
 	lerp(this: Target, to: Target, progress: number): Target;
@@ -31,13 +33,13 @@ export enum TweenState {
 
 export class Tween<Target> {
 	#resolve!: () => void;
-	#token?: Token;
+	#token?: ConnectionToken;
 	#state: TweenState = TweenState.Paused;
 	readonly completion: Promise<void>;
 	readonly target: Target;
 	readonly from: TweenableState<Target>;
 	readonly to: TweenableState<Target>;
-	readonly steps: Observable<number> = new Observable();
+	readonly steps: Signal<number> = new Signal();
 	easing: Easing;
 	yoyo: boolean;
 	repeat: number;
@@ -91,7 +93,7 @@ export class Tween<Target> {
 
 	update() {
 		const progress = this.progress;
-		this.steps.value = progress;
+		this.steps.send(progress);
 		for (const key in this.from) {
 			const from = this.from[key] as any;
 			const to = this.to[key] as any;
@@ -105,7 +107,7 @@ export class Tween<Target> {
 
 	start() {
 		this.#state = TweenState.Running;
-		this.#token = Runtime.updates.subscribe(() => {
+		this.#token = Runtime.updates.connect(() => {
 			this.elapsed += Runtime.dt * this.timeScale;
 			this.totalElapsed += Runtime.dt * this.timeScale;
 			while (this.elapsed >= this.duration) {
@@ -130,13 +132,13 @@ export class Tween<Target> {
 
 	pause() {
 		this.#state = TweenState.Paused;
-		this.#token && Runtime.updates.unsubcribe(this.#token);
+		this.#token && Runtime.updates.disconnect(this.#token);
 	}
 
 	complete() {
 		this.#state = TweenState.Complete;
 		this.elapsed = this.duration;
-		this.#token && Runtime.updates.unsubcribe(this.#token);
+		this.#token && Runtime.updates.disconnect(this.#token);
 		this.update();
 		this.#resolve();
 	}

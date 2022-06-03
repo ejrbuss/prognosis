@@ -1,8 +1,7 @@
-import { AudioAsset, SpriteAsset, SpriteSheetAsset } from "./assets.js";
-import { Camera } from "./camera.js";
-import { Color } from "./color.js";
+import { Camera } from "./data/camera.js";
+import { Color } from "./data/color.js";
 import { Easing } from "./easing.js";
-import { Point } from "./point.js";
+import { Point } from "./data/point.js";
 
 export type Controller<Target> = {
 	[Property in keyof Target]: PropertyController<Target[Property]>;
@@ -45,7 +44,7 @@ export type InspectStringProps = InspectProps & {
 	pattern?: RegExp;
 };
 
-export class NodeInspector {
+export class Inspector {
 	inspectBoolean(
 		controller: PropertyController<boolean>,
 		props?: InspectProps
@@ -69,18 +68,6 @@ export class NodeInspector {
 
 	inspectCamera(controller: PropertyController<Camera>, props?: InspectProps) {}
 
-	inspectSpriteAsset(
-		controller: PropertyController<SpriteAsset>,
-		props?: InspectProps
-	) {}
-
-	inspectSpriteSheetAsset(
-		controller: PropertyController<SpriteSheetAsset>,
-		props?: InspectProps
-	) {}
-
-	inspectAudioAsset(
-		controller: PropertyController<AudioAsset>,
-		props?: InspectProps
-	) {}
+	// TODO
+	inspectResource() {}
 }

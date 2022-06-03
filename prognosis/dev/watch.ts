@@ -38,7 +38,7 @@ export async function watch() {
 			change.filename === "project.json" ||
 			change.filename.startsWith("prognosis") ||
 			change.filename.startsWith("project") ||
-			change.filename.startsWith("assets")
+			change.filename.startsWith("resources")
 		) {
 			if (!deferredBuild) {
 				deferredBuild = setTimeout(() => {

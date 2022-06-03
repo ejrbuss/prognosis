@@ -1,5 +1,5 @@
-import "../prognosis/math.js";
-import { Color } from "../prognosis/color.js";
+import "../../prognosis/math.js";
+import { Color } from "../../prognosis/data/color.js";
 
 test("Color.rgb255", () => {
 	expect(Color.rgb255(191, 180, 229).hex).toBe("#bfb4e5ff");

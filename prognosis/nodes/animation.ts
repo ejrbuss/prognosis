@@ -1,25 +1,25 @@
-import { SpriteSheetAsset } from "../assets.js";
-import { Node } from "../node.js";
+import { SpriteSheetResource } from "../resources/spriteSheetResource.js";
+import { Node } from "./node.js";
 import { Sprite } from "./sprite.js";
 
 export class Animation extends Node {
 	spriteComponent?: Sprite;
-	spriteSheetAsset?: SpriteSheetAsset;
+	spriteSheetResource?: SpriteSheetResource;
 	frameKey?: string;
+	priority: number = -50;
 
 	childrenChanged() {
 		this.spriteComponent = this.get(Sprite);
 	}
 
-	// TODO this probably needs to be in lateUpdate or similar
 	update() {
 		if (
 			this.spriteComponent !== undefined &&
-			this.spriteSheetAsset !== undefined &&
+			this.spriteSheetResource !== undefined &&
 			this.frameKey !== undefined
 		) {
-			this.spriteComponent.spriteAsset =
-				this.spriteSheetAsset.frames[this.frameKey];
+			this.spriteComponent.spriteResource =
+				this.spriteSheetResource.frames[this.frameKey]?.spriteResource;
 		}
 	}
 }

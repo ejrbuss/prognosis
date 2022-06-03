@@ -1,15 +1,14 @@
-import { Color } from "./color.js";
 import { Graphics } from "./graphics.js";
-import { Node } from "./node.js";
-import { Observable } from "./observable.js";
+import { Node } from "./nodes/node.js";
+import { Signal } from "./signal.js";
 import { Project } from "./project.js";
 
 const RuntimeClass = class Runtime {
+	#root?: Node;
 	#now: number = 0;
 	#dt: number = 0;
-	readonly updates: Observable<void> = new Observable();
-	readonly lateUpdates: Observable<void> = new Observable();
-	readonly rootUpdates: Observable<Node> = new Observable();
+	updates: Signal = new Signal();
+	rootChanges: Signal = new Signal();
 	timeScale: number = 1;
 	running: boolean = false;
 
@@ -22,36 +21,44 @@ const RuntimeClass = class Runtime {
 	}
 
 	get root(): Node {
-		return this.rootUpdates.value;
+		return this.#root as Node;
 	}
 
 	set root(node: Node) {
-		this.rootUpdates.value = node;
+		this.#root = node;
+		if (this.running && !node.started) {
+			node._start();
+		}
+		this.rootChanges.send();
 	}
 
 	start() {
 		this.#now = performance.now() / 1000;
-		this.root._start();
 		this.running = true;
-		requestAnimationFrame(() => this.update());
+		if (this.#root !== undefined) {
+			this.#root._start();
+		}
+		requestAnimationFrame(() => this.#loop());
 	}
 
-	update() {
+	#loop() {
 		const newNow = performance.now() / 1000;
 		this.#dt = (newNow - this.#now) * this.timeScale;
 		this.#now = newNow;
-		this.updates.update();
-		this.root._update();
-		const context = Graphics.context;
-		const w = Project.graphics.width;
-		const h = Project.graphics.height;
-		context.clearRect(0, 0, w, h);
-		context.save();
-		context.translate(w / 2, h / 2);
-		this.root._render(context);
-		context.restore();
+		this.updates.send();
+		if (this.#root !== undefined) {
+			this.#root._update();
+			const context = Graphics.context;
+			const w = Project.graphics.width;
+			const h = Project.graphics.height;
+			context.clearRect(0, 0, w, h);
+			context.save();
+			context.translate(w / 2, h / 2);
+			this.#root._render(context);
+			context.restore();
+		}
 		if (this.running) {
-			requestAnimationFrame(() => this.update());
+			requestAnimationFrame(() => this.#loop());
 		}
 	}
 };

@@ -1,5 +1,5 @@
-import { Graphics } from "./graphics.js";
-import { Runtime } from "./runtime.js";
+import { Graphics } from "../graphics.js";
+import { Runtime } from "../runtime.js";
 
 const MouseClass = class Mouse {
 	events: MouseEvent[] = [];
@@ -14,7 +14,7 @@ const MouseClass = class Mouse {
 		Graphics.canvas.addEventListener("mousemove", pushEvent);
 		Graphics.canvas.addEventListener("mousedown", pushEvent);
 		Graphics.canvas.addEventListener("mouseup", pushEvent);
-		Runtime.updates.subscribe(this.update.bind(this));
+		Runtime.updates.connect(this.update.bind(this));
 	}
 
 	update() {

@@ -1,5 +1,7 @@
-import { Observable, Token } from "./observable.js";
+import { Signal, ConnectionToken } from "./signal.js";
 import { Runtime } from "./runtime.js";
+
+// TODO make Timers a Node
 
 export enum TimerState {
 	Running = "Running",
@@ -16,9 +18,9 @@ export type TimerProps = {
 
 export class Timer {
 	#resolve!: (offset: number) => void;
-	#token?: Token;
+	#token?: ConnectionToken;
 	#state: TimerState = TimerState.Paused;
-	readonly ticks: Observable<number> = new Observable();
+	readonly ticks: Signal = new Signal();
 	readonly completion: Promise<number>;
 	duration: number;
 	repeat: number;
@@ -46,12 +48,12 @@ export class Timer {
 
 	start() {
 		this.#state = TimerState.Running;
-		this.#token = Runtime.updates.subscribe(() => {
+		this.#token = Runtime.updates.connect(() => {
 			this.elapsed += Runtime.dt * this.timeScale;
 			this.totalElapsed += Runtime.dt * this.timeScale;
 			while (this.elapsed >= this.duration) {
 				this.elapsed -= this.duration;
-				this.ticks.value = this.elapsed;
+				this.ticks.send();
 			}
 			if (this.totalElapsed >= this.totalDuration) {
 				this.complete();
@@ -66,12 +68,12 @@ export class Timer {
 
 	pause() {
 		this.#state = TimerState.Paused;
-		this.#token && Runtime.updates.unsubcribe(this.#token);
+		this.#token && Runtime.updates.disconnect(this.#token);
 	}
 
 	complete() {
 		this.#state = TimerState.Complete;
-		this.#token && Runtime.updates.unsubcribe(this.#token);
+		this.#token && Runtime.updates.disconnect(this.#token);
 		this.#resolve(this.totalElapsed - this.totalDuration);
 	}
 }

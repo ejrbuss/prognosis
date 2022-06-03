@@ -1,6 +1,6 @@
 {
 	"title": "Demo",
-	"root": "/assets/scenes/main.json",
+	"root": "/resources/scenes/main.json",
 	"graphics": {
 		"width": 1280,
 		"height": 720,

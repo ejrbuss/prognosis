@@ -1,18 +1,21 @@
-export function useEventListener<EventType extends keyof WindowEventMap>(
-	eventName: EventType,
-	handler: EventListener,
-	target: HTMLElement | Window = window
-) {
-	const saveHandler = React.useRef<EventListener>();
+import { Storeable } from "../data/store.js";
+
+export function usePersistentState<Type extends Storeable>(
+	key: string,
+	defaultValue: Type
+): [Type, (newState: Type) => void] {
+	const [state, setState] = React.useState(defaultValue);
 	React.useEffect(() => {
-		saveHandler.current = handler;
-	}, [handler]);
-	React.useEffect(() => {
-		const eventListener: EventListener = (event) =>
-			(saveHandler.current as EventListener)(event);
-		target.addEventListener(eventName, eventListener);
-		return () => {
-			target.removeEventListener(eventName, eventListener);
-		};
-	}, [eventName, target]);
+		const storageValue = localStorage.getItem(key);
+		if (storageValue !== null) {
+			setState(JSON.parse(storageValue));
+		}
+	}, []);
+	return [
+		state,
+		(newState: Type) => {
+			localStorage.setItem(key, JSON.stringify(newState));
+			setState(newState);
+		},
+	];
 }

@@ -1,41 +1,41 @@
-import { SpriteAsset } from "../assets.js";
-import { Color } from "../color.js";
-import { Node } from "../node.js";
-import { Point } from "../point.js";
+import { Color } from "../data/color.js";
+import { Node } from "./node.js";
+import { Point } from "../data/point.js";
+import { SpriteResource } from "../resources/spriteResource.js";
 
 export class Sprite extends Node {
 	origin: Point = Point.Origin;
 	scale: Point = new Point(1, 1);
 	rotation: number = 0;
-	spriteAsset?: SpriteAsset;
+	spriteResource?: SpriteResource;
 	debug: boolean = false;
 
 	get width(): number {
-		const bitmap = this.spriteAsset?.bitmap;
+		const bitmap = this.spriteResource?.bitmap;
 		return bitmap === undefined ? 0 : bitmap.width * this.scale.x;
 	}
 
 	get height(): number {
-		const bitmap = this.spriteAsset?.bitmap;
+		const bitmap = this.spriteResource?.bitmap;
 		return bitmap === undefined ? 0 : bitmap.height * this.scale.y;
 	}
 
 	set width(width: number) {
-		const bitmap = this.spriteAsset?.bitmap;
+		const bitmap = this.spriteResource?.bitmap;
 		if (bitmap !== undefined) {
 			this.scale = this.scale.with({ x: width / bitmap.width });
 		}
 	}
 
 	set height(height: number) {
-		const bitmap = this.spriteAsset?.bitmap;
+		const bitmap = this.spriteResource?.bitmap;
 		if (bitmap !== undefined) {
 			this.scale = this.scale.with({ y: height / bitmap.height });
 		}
 	}
 
 	render(context: CanvasRenderingContext2D) {
-		const bitmap = this.spriteAsset?.bitmap;
+		const bitmap = this.spriteResource?.bitmap;
 		if (bitmap !== undefined) {
 			context.save();
 			context.rotate(this.rotation);

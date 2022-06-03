@@ -1,4 +1,4 @@
-import { Tweenable } from "./tween.js";
+import { Tweenable } from "../tween.js";
 
 type PointProps = { x: number; y: number };
 

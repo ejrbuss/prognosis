@@ -1,4 +1,4 @@
-import { Tweenable } from "./tween.js";
+import { Tweenable } from "../tween.js";
 
 export type RgbaProps = {
 	red: number;

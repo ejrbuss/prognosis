@@ -1,18 +1,19 @@
-import { Assets } from "../prognosis/assets.js";
-import { Color } from "../prognosis/color.js";
+import { Resources } from "../prognosis/resources/resources.js";
+import { Color } from "../prognosis/data/color.js";
 import { Animation } from "../prognosis/nodes/animation.js";
 import { Rectangle } from "../prognosis/nodes/rectangle.js";
 import { Sprite } from "../prognosis/nodes/sprite.js";
 import { Surface } from "../prognosis/nodes/surface.js";
 import { Text } from "../prognosis/nodes/text.js";
-import { Node } from "../prognosis/node.js";
-import { Key, Keyboard } from "../prognosis/keyboard.js";
-import { Point } from "../prognosis/point.js";
+import { Node } from "../prognosis/nodes/node.js";
+import { Key, Keyboard } from "../prognosis/input/keyboard.js";
+import { Point } from "../prognosis/data/point.js";
 import { Project } from "../prognosis/project.js";
 import { Random } from "../prognosis/random.js";
 import { Runtime } from "../prognosis/runtime.js";
+import { SpriteSheetResource } from "../prognosis/resources/spriteSheetResource.js";
 
-Runtime.updates.nextUpdate.then(async () => {
+Runtime.updates.next.then(async () => {
 	const maxWidth = Project.graphics.width;
 	const maxHeight = Project.graphics.height;
 
@@ -29,9 +30,10 @@ Runtime.updates.nextUpdate.then(async () => {
 	screen.localX -= maxWidth / 2;
 	screen.localY -= maxHeight / 2;
 
-	const playerSpriteSheetAsset = Assets.loadSpriteSheet(
-		"/assets/demo/characters/player.json",
-		"/assets/demo/characters/player.png"
+	const playerSpriteSheetAsset = Resources.load(
+		SpriteSheetResource,
+		"/resources/demo/characters/player.json",
+		"/resources/demo/characters/player.png"
 	);
 
 	const background = new Rectangle("Background");
@@ -110,7 +112,7 @@ Runtime.updates.nextUpdate.then(async () => {
 	const player = new Player("Player");
 	const playerAnimation = new Animation();
 	playerSpriteSheetAsset.then(
-		(asset) => (playerAnimation.spriteSheetAsset = asset)
+		(asset) => (playerAnimation.spriteSheetResource = asset)
 	);
 	playerAnimation.frameKey = "player 0.png";
 	player.add(playerAnimation);
@@ -129,15 +131,19 @@ Runtime.updates.nextUpdate.then(async () => {
 			this.y += this.direction.y * this.speed * Runtime.dt;
 			if (this.x > maxWidth / 2) {
 				this.direction = this.direction.flipX();
+				this.x += this.direction.x * this.speed * Runtime.dt;
 			}
 			if (this.x < -maxWidth / 2) {
 				this.direction = this.direction.flipX();
+				this.x += this.direction.x * this.speed * Runtime.dt;
 			}
 			if (this.y > maxHeight / 2) {
 				this.direction = this.direction.flipY();
+				this.y += this.direction.y * this.speed * Runtime.dt;
 			}
 			if (this.y < -maxHeight / 2) {
 				this.direction = this.direction.flipY();
+				this.y += this.direction.y * this.speed * Runtime.dt;
 			}
 		}
 	}
@@ -145,7 +151,7 @@ Runtime.updates.nextUpdate.then(async () => {
 	// dummies.x += 1000; // TODO debug
 	world.add(dummies);
 
-	const DummyCount = 10000;
+	const DummyCount = 100;
 	for (let i = 0; i < DummyCount; i++) {
 		const dummy = new DummyBouncer(`Dummy #${i}`);
 		dummy.x = Random.integer(-maxWidth / 2, maxWidth / 2);
@@ -153,7 +159,7 @@ Runtime.updates.nextUpdate.then(async () => {
 		dummy.z = Random.integer(0, 3);
 		const dummyAnimation = new Animation();
 		playerSpriteSheetAsset.then(
-			(asset) => (dummyAnimation.spriteSheetAsset = asset)
+			(asset) => (dummyAnimation.spriteSheetResource = asset)
 		);
 		dummyAnimation.frameKey = "player 0.png";
 		dummy.add(dummyAnimation);
@@ -187,5 +193,5 @@ Runtime.updates.nextUpdate.then(async () => {
 	world.add(greenSquare2);
 
 	(window as any).Runtime = Runtime;
-	(window as any).Assets = Assets;
+	(window as any).Resources = Resources;
 });

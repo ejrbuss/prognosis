@@ -1,5 +1,5 @@
-import { Color } from "../color.js";
-import { Node } from "../node.js";
+import { Color } from "../data/color.js";
+import { Node } from "./node.js";
 
 export enum TextAlignment {
 	Left = "left",
