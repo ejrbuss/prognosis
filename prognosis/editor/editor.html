@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Prognosis Editor</title>
+	<link rel="icon" href="./favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="/prognosis/editor/editor.css">
+</head>
+
+<body>
+	<main id="root"></main>
+	<!-- React -->
+	<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+	<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+	<!-- Icons -->
+	<script type="module" crossorigin src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+	<!-- Prognosis -->
+	<script type="module">
+		import { Editor } from "/prognosis/editor/editor.js";
+		ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Editor, null));
+	</script>
+</body>
+
+</html>

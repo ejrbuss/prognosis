@@ -1,6 +1,6 @@
 import { Tweenable } from "./tween.js";
 
-type PointComponents = { x: number; y: number };
+type PointProps = { x: number; y: number };
 
 export class Point implements Tweenable<Point> {
 	static Origin = new Point(0, 0);
@@ -11,8 +11,8 @@ export class Point implements Tweenable<Point> {
 
 	constructor(readonly x: number, readonly y: number) {}
 
-	with(components: Partial<PointComponents>): Point {
-		return new Point(components.x ?? this.x, components.y ?? this.y);
+	with(props: Partial<PointProps>): Point {
+		return new Point(props.x ?? this.x, props.y ?? this.y);
 	}
 
 	get angle(): number {

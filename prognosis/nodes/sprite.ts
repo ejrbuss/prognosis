@@ -1,12 +1,12 @@
 import { SpriteAsset } from "../assets.js";
 import { Color } from "../color.js";
-import { Component, Entity } from "../core.js";
+import { Node } from "../node.js";
 import { Point } from "../point.js";
 
-export class Sprite extends Component {
+export class Sprite extends Node {
 	origin: Point = Point.Origin;
-	rotation: number = 0;
 	scale: Point = new Point(1, 1);
+	rotation: number = 0;
 	spriteAsset?: SpriteAsset;
 	debug: boolean = false;
 
@@ -34,7 +34,7 @@ export class Sprite extends Component {
 		}
 	}
 
-	render(_entity: Entity, context: CanvasRenderingContext2D) {
+	render(context: CanvasRenderingContext2D) {
 		const bitmap = this.spriteAsset?.bitmap;
 		if (bitmap !== undefined) {
 			context.save();

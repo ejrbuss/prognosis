@@ -1,8 +1,8 @@
-import { AudioAsset, SpriteAsset, SpriteSheetAsset } from "../assets.js";
-import { Camera } from "../camera.js";
-import { Color } from "../color.js";
-import { Easing } from "../easing.js";
-import { Point } from "../point.js";
+import { AudioAsset, SpriteAsset, SpriteSheetAsset } from "./assets.js";
+import { Camera } from "./camera.js";
+import { Color } from "./color.js";
+import { Easing } from "./easing.js";
+import { Point } from "./point.js";
 
 export type Controller<Target> = {
 	[Property in keyof Target]: PropertyController<Target[Property]>;
@@ -28,73 +28,59 @@ export class PropertyController<Type> {
 	) {}
 }
 
-export type InspectOptions = {
+export type InspectProps = {
 	name?: string;
 };
 
-export type InspectNumberOptions = InspectOptions & {
+export type InspectNumberProps = InspectProps & {
 	integer?: boolean;
 	range?: number;
 	min?: number;
 	max?: number;
 };
 
-export type InspectStringOptions = InspectOptions & {
+export type InspectStringProps = InspectProps & {
 	enum?: string[];
 	resizeable?: boolean;
 	pattern?: RegExp;
 };
 
-export class Inspector {
-	constructor() {}
-
+export class NodeInspector {
 	inspectBoolean(
 		controller: PropertyController<boolean>,
-		options?: InspectOptions
+		props?: InspectProps
 	) {}
 
 	inspectNumber(
 		controller: PropertyController<number>,
-		options?: InspectNumberOptions
+		props?: InspectNumberProps
 	) {}
 
 	inspectString(
 		controller: PropertyController<string>,
-		options?: InspectStringOptions
+		props?: InspectStringProps
 	) {}
 
-	inspectColor(
-		controller: PropertyController<Color>,
-		options?: InspectOptions
-	) {}
+	inspectColor(controller: PropertyController<Color>, props?: InspectProps) {}
 
-	inspectPoint(
-		controller: PropertyController<Point>,
-		options?: InspectOptions
-	) {}
+	inspectPoint(controller: PropertyController<Point>, props?: InspectProps) {}
 
-	inspectEasing(
-		controller: PropertyController<Easing>,
-		options?: InspectOptions
-	) {}
+	inspectEasing(controller: PropertyController<Easing>, props?: InspectProps) {}
 
-	inspectCamera(
-		controller: PropertyController<Camera>,
-		options?: InspectOptions
-	) {}
+	inspectCamera(controller: PropertyController<Camera>, props?: InspectProps) {}
 
 	inspectSpriteAsset(
 		controller: PropertyController<SpriteAsset>,
-		options?: InspectOptions
+		props?: InspectProps
 	) {}
 
 	inspectSpriteSheetAsset(
 		controller: PropertyController<SpriteSheetAsset>,
-		options?: InspectOptions
+		props?: InspectProps
 	) {}
 
 	inspectAudioAsset(
 		controller: PropertyController<AudioAsset>,
-		options?: InspectOptions
+		props?: InspectProps
 	) {}
 }

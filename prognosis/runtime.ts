@@ -1,43 +1,58 @@
-import { Entity } from "./core.js";
+import { Color } from "./color.js";
 import { Graphics } from "./graphics.js";
+import { Node } from "./node.js";
 import { Observable } from "./observable.js";
 import { Project } from "./project.js";
-import { Mutable } from "./util.js";
 
 const RuntimeClass = class Runtime {
+	#now: number = 0;
+	#dt: number = 0;
 	readonly updates: Observable<void> = new Observable();
 	readonly lateUpdates: Observable<void> = new Observable();
-	readonly now: number = 0;
-	readonly dt: number = 0;
+	readonly rootUpdates: Observable<Node> = new Observable();
 	timeScale: number = 1;
-	root!: Entity;
+	running: boolean = false;
 
-	constructor() {
-		this.update = this.update.bind(this);
+	get now(): number {
+		return this.#now;
+	}
+
+	get dt(): number {
+		return this.#dt;
+	}
+
+	get root(): Node {
+		return this.rootUpdates.value;
+	}
+
+	set root(node: Node) {
+		this.rootUpdates.value = node;
 	}
 
 	start() {
-		(this as Mutable<this>).now = performance.now() / 1000;
-		requestAnimationFrame(this.update);
+		this.#now = performance.now() / 1000;
+		this.root._start();
+		this.running = true;
+		requestAnimationFrame(() => this.update());
 	}
 
 	update() {
 		const newNow = performance.now() / 1000;
-		(this as Mutable<this>).dt = (newNow - this.now) * this.timeScale;
-		(this as Mutable<this>).now = newNow;
+		this.#dt = (newNow - this.#now) * this.timeScale;
+		this.#now = newNow;
 		this.updates.update();
-		this.root.update();
-		this.lateUpdates.update();
-		this.root.lateUpdate();
-		// this.root.physicsUpdate();
-		Graphics.context.clearRect(
-			0,
-			0,
-			Project.graphics.width,
-			Project.graphics.height
-		);
-		this.root.render(Graphics.context);
-		requestAnimationFrame(this.update);
+		this.root._update();
+		const context = Graphics.context;
+		const w = Project.graphics.width;
+		const h = Project.graphics.height;
+		context.clearRect(0, 0, w, h);
+		context.save();
+		context.translate(w / 2, h / 2);
+		this.root._render(context);
+		context.restore();
+		if (this.running) {
+			requestAnimationFrame(() => this.update());
+		}
 	}
 };
 

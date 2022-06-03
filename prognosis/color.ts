@@ -1,13 +1,13 @@
 import { Tweenable } from "./tween.js";
 
-type RgbaComponents = {
+export type RgbaProps = {
 	red: number;
 	blue: number;
 	green: number;
 	alpha: number;
 };
 
-type CmykComponents = {
+export type CmykProps = {
 	cyan: number;
 	magenta: number;
 	yellow: number;
@@ -15,7 +15,7 @@ type CmykComponents = {
 	alpha: number;
 };
 
-type HslaComponents = {
+export type HslaProps = {
 	hue: number;
 	saturation: number;
 	lightness: number;
@@ -140,48 +140,41 @@ export class Color implements Tweenable<Color> {
 	constructor(readonly value: number) {}
 
 	with(
-		components:
-			| Partial<RgbaComponents>
-			| Partial<CmykComponents>
-			| Partial<HslaComponents>
+		props: Partial<RgbaProps> | Partial<CmykProps> | Partial<HslaProps>
 	): Color {
-		if ("red" in components || "green" in components || "blue" in components) {
+		if ("red" in props || "green" in props || "blue" in props) {
 			return Color.rgba(
-				components.red ?? this.red,
-				components.green ?? this.green,
-				components.blue ?? this.blue,
-				components.alpha ?? this.alpha
+				props.red ?? this.red,
+				props.green ?? this.green,
+				props.blue ?? this.blue,
+				props.alpha ?? this.alpha
 			);
 		}
 		if (
-			"cyan" in components ||
-			"magenta" in components ||
-			"yellow" in components ||
-			"black" in components
+			"cyan" in props ||
+			"magenta" in props ||
+			"yellow" in props ||
+			"black" in props
 		) {
 			return Color.cmyka(
-				components.cyan ?? this.cyan,
-				components.magenta ?? this.magenta,
-				components.yellow ?? this.yellow,
-				components.key ?? this.key,
-				components.alpha ?? this.alpha
+				props.cyan ?? this.cyan,
+				props.magenta ?? this.magenta,
+				props.yellow ?? this.yellow,
+				props.key ?? this.key,
+				props.alpha ?? this.alpha
 			);
 		}
-		if (
-			"hue" in components ||
-			"saturation" in components ||
-			"lightness" in components
-		) {
+		if ("hue" in props || "saturation" in props || "lightness" in props) {
 			return Color.hsla(
-				components.hue ?? this.hue,
-				components.saturation ?? this.saturation,
-				components.lightness ?? this.lightness,
-				components.alpha ?? this.alpha
+				props.hue ?? this.hue,
+				props.saturation ?? this.saturation,
+				props.lightness ?? this.lightness,
+				props.alpha ?? this.alpha
 			);
 		}
 		return new Color(
 			this.value &
-				(0xffffff00 + Math.clamp(components.alpha ?? this.alpha, 0, 1) * 255)
+				(0xffffff00 + Math.clamp(props.alpha ?? this.alpha, 0, 1) * 255)
 		);
 	}
 

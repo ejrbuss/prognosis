@@ -1,6 +1,6 @@
 import { Point } from "./point.js";
 
-export type CameraComponents = {
+export type CameraProps = {
 	position: Point;
 	zoom: number;
 	rotation: number;
@@ -11,10 +11,10 @@ export class Camera {
 	zoom: number;
 	rotation: number;
 
-	constructor(components?: Partial<CameraComponents>) {
-		this.position = components?.position ?? Point.Origin;
-		this.zoom = components?.zoom ?? 1;
-		this.rotation = components?.rotation ?? 0;
+	constructor(props?: Partial<CameraProps>) {
+		this.position = props?.position ?? Point.Origin;
+		this.zoom = props?.zoom ?? 1;
+		this.rotation = props?.rotation ?? 0;
 	}
 
 	get x(): number {

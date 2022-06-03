@@ -1,6 +1,7 @@
 :root {
 	--text: rgb(231, 231, 231);
 	--text-subtle: rgb(121, 123, 128);
+	--font: Helvetica, sans-serif;
 	--font-mono: 'Operator Mono', 'Fira Code', 'Courier New', Courier, monospace;
 	--background-primary: rgb(34, 35, 46);
 	--background-secondary: rgb(22, 22, 28);
@@ -16,21 +17,12 @@ body {
     outline: none;
 }
 
-#editor-grid {
-	overflow: hidden;
-	display: grid;
-	width: 100vw;
-	height: 100vh;
+.horizontal-gutter {
+	border-top: 1px solid var(--background-secondary);
 }
 
-#toolbar {
-}
-
-#inspector,
-#inspector-gutter,
-#explorer,
-#explorer-gutter {
-	grid-row: span 4;
+.vertical-gutter {
+	border-left: 1px solid var(--background-secondary);
 }
 
 #game-container {
@@ -55,9 +47,7 @@ body {
 	cursor: col-resize;
 }
 
-.row-gutter {
-	border-top: 1px solid var(--background-secondary);
-}
+
 
 .row-gutter:hover {
 	cursor: row-resize;
@@ -67,7 +57,7 @@ h1 {
 	margin: 0;
 	padding: 0.8em;
 	color: var(--text-subtle);
-	font-family: Helvetica, sans-serif;
+	font-family: var(--font);
 	font-weight: 200;
 	font-size: 1em;
 	user-select: none;
@@ -111,4 +101,42 @@ h1 {
 	margin-right: 1em;
 	padding: 0;
 	border: none;
+}
+
+#explorer-container,
+#inspector-container {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+}
+
+.empty-hint {
+	height: calc(100% - 128px);
+	display: flex;
+	justify-content: center;
+	flex-flow: column;
+	align-items: center;
+	font-family: var(--font);
+	font-size: 0.8em;
+	color: var(--text-subtle);
+	text-align: center;
+}
+
+.empty-hint > * {
+	cursor: pointer;
+}
+
+.explorer-node {
+	list-style-type: none;
+}
+
+.explorer-icon {
+	transform: translate(0%, 0.2em);
+	color: var(--text-subtle);
+}
+
+.explorer-name {
+	font-family: var(--font);
+	font-size: 1em;
+	color: var(--text);
 }

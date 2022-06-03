@@ -1,21 +1,20 @@
 import { Easing } from "./easing.js";
 import { Observable, Token } from "./observable.js";
 import { Runtime } from "./runtime.js";
-import { Mutable } from "./util.js";
 
 export interface Tweenable<Target> {
 	lerp(this: Target, to: Target, progress: number): Target;
 }
 
-type TweenableProperties<Target> = Partial<{
+type TweenableState<Target> = Partial<{
 	[P in keyof Target]: Target[P] & (number | Tweenable<Target[P]>);
 }>;
 
-export type TweenOptions<Target> = {
+export type TweenProps<Target> = {
 	duration: number;
 	target?: Target;
-	from?: Readonly<TweenableProperties<Target>>;
-	to?: Readonly<TweenableProperties<Target>>;
+	from?: Readonly<TweenableState<Target>>;
+	to?: Readonly<TweenableState<Target>>;
 	easing?: Easing;
 	yoyo?: boolean;
 	repeat?: number;
@@ -31,14 +30,14 @@ export enum TweenState {
 }
 
 export class Tween<Target> {
-	private resolve!: () => void;
-	private token?: Token;
+	#resolve!: () => void;
+	#token?: Token;
+	#state: TweenState = TweenState.Paused;
 	readonly completion: Promise<void>;
 	readonly target: Target;
-	readonly from: TweenableProperties<Target>;
-	readonly to: TweenableProperties<Target>;
+	readonly from: TweenableState<Target>;
+	readonly to: TweenableState<Target>;
 	readonly steps: Observable<number> = new Observable();
-	readonly state: TweenState = TweenState.Paused;
 	easing: Easing;
 	yoyo: boolean;
 	repeat: number;
@@ -48,15 +47,15 @@ export class Tween<Target> {
 	elapsed: number = 0;
 	totalElapsed: number = 0;
 
-	constructor(options: TweenOptions<Target>) {
-		this.completion = new Promise((resolve) => (this.resolve = resolve));
-		this.easing = options.easing ?? Easing.linear;
-		this.target = options.target as Target;
-		this.to = options.to ?? {};
-		this.from = options.from ?? {};
-		this.yoyo = options.yoyo ?? false;
-		this.reverse = options.reverse ?? false;
-		this.timeScale = options.timeScale ?? 1;
+	constructor(props: TweenProps<Target>) {
+		this.completion = new Promise((resolve) => (this.#resolve = resolve));
+		this.easing = props.easing ?? Easing.linear;
+		this.target = props.target as Target;
+		this.to = props.to ?? {};
+		this.from = props.from ?? {};
+		this.yoyo = props.yoyo ?? false;
+		this.reverse = props.reverse ?? false;
+		this.timeScale = props.timeScale ?? 1;
 		for (const key in this.from) {
 			if (!(key in this.to)) {
 				throw new Error(
@@ -69,12 +68,16 @@ export class Tween<Target> {
 				this.from[key] = this.target[key] as any;
 			}
 		}
-		this.yoyo = options.yoyo ?? false;
-		this.repeat = options.repeat ?? 0;
-		this.duration = options.duration;
-		if (!options.startPaused) {
+		this.yoyo = props.yoyo ?? false;
+		this.repeat = props.repeat ?? 0;
+		this.duration = props.duration;
+		if (!props.startPaused) {
 			this.start();
 		}
+	}
+
+	get state(): TweenState {
+		return this.#state;
 	}
 
 	get progress(): number {
@@ -88,7 +91,7 @@ export class Tween<Target> {
 
 	update() {
 		const progress = this.progress;
-		this.steps.update(progress);
+		this.steps.value = progress;
 		for (const key in this.from) {
 			const from = this.from[key] as any;
 			const to = this.to[key] as any;
@@ -101,8 +104,8 @@ export class Tween<Target> {
 	}
 
 	start() {
-		(this as Mutable<this>).state = TweenState.Running;
-		this.token = Runtime.updates.subscribe(() => {
+		this.#state = TweenState.Running;
+		this.#token = Runtime.updates.subscribe(() => {
 			this.elapsed += Runtime.dt * this.timeScale;
 			this.totalElapsed += Runtime.dt * this.timeScale;
 			while (this.elapsed >= this.duration) {
@@ -126,15 +129,15 @@ export class Tween<Target> {
 	}
 
 	pause() {
-		(this as Mutable<this>).state = TweenState.Paused;
-		this.token && Runtime.updates.unsubcribe(this.token);
+		this.#state = TweenState.Paused;
+		this.#token && Runtime.updates.unsubcribe(this.#token);
 	}
 
 	complete() {
-		(this as Mutable<this>).state = TweenState.Complete;
+		this.#state = TweenState.Complete;
 		this.elapsed = this.duration;
-		this.token && Runtime.updates.unsubcribe(this.token);
+		this.#token && Runtime.updates.unsubcribe(this.#token);
 		this.update();
-		this.resolve();
+		this.#resolve();
 	}
 }

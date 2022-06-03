@@ -1,23 +1,21 @@
 import { Observable } from "./observable.js";
 
-type JsonStoreable =
+type Storeable =
 	| boolean
 	| number
 	| string
-	| JsonStoreable[]
-	| { [property: string]: JsonStoreable };
+	| Storeable[]
+	| { [property: string]: Storeable };
 
-export class Store<Type extends JsonStoreable> extends Observable<Type> {
+export class Store<Type extends Storeable> extends Observable<Type> {
 	constructor(readonly key: string, readonly defaultValue: Type) {
 		super(defaultValue);
 		const storeValue = localStorage.getItem(key);
 		if (storeValue !== undefined && storeValue !== null) {
-			this.update(JSON.parse(storeValue));
+			this.value = JSON.parse(storeValue);
 		}
-	}
-
-	update(newValue: Type): void {
-		super.update(newValue);
-		localStorage.setItem(this.key, JSON.stringify(newValue));
+		this.subscribe((newValue) => {
+			localStorage.setItem(this.key, JSON.stringify(newValue));
+		});
 	}
 }

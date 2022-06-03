@@ -1,19 +1,9 @@
 {
 	"title": "Demo",
+	"root": "/assets/scenes/main.json",
 	"graphics": {
 		"width": 1280,
 		"height": 720,
 		"antiAliasing": false
-	},
-	"root": "root",
-	"entities": [
-		{
-			"name": "root",
-			"components": [
-				{
-					"name": "Surface"
-				}
-			]
-		}
-	]
+	}
 }

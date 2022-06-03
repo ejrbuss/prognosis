@@ -16,7 +16,6 @@ const GraphicsClass = class Graphics {
 			throw new Error("Failed to created CanvasRenderingContext2D for canvas!");
 		}
 		this.context = context;
-		context.translate(Project.graphics.width / 2, Project.graphics.height / 2);
 		this.canvas.width = Project.graphics.width;
 		this.canvas.height = Project.graphics.height;
 		this.context.imageSmoothingEnabled = Project.graphics.antiAliasing;

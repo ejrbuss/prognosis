@@ -1,13 +1,13 @@
 import { Color } from "../color.js";
-import { Component, Entity } from "../core.js";
+import { Node } from "../node.js";
 
-export class Rectangle extends Component {
+export class Rectangle extends Node {
 	rotation: number = 0;
 	width: number = 100;
 	height: number = 100;
 	color: Color = Color.Black;
 
-	render(_entity: Entity, context: CanvasRenderingContext2D) {
+	render(context: CanvasRenderingContext2D) {
 		context.save();
 		context.rotate(this.rotation);
 		context.fillStyle = this.color.hex;

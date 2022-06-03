@@ -1,10 +1,10 @@
 import { inspect } from "util";
 
 const LoggingClass = class Logging {
-	private rootConsoleLog: typeof console.log;
+	#rootConsoleLog: typeof console.log;
 
 	constructor() {
-		this.rootConsoleLog = console.log;
+		this.#rootConsoleLog = console.log;
 		this.format = "{time} - {message}";
 	}
 
@@ -22,7 +22,7 @@ const LoggingClass = class Logging {
 				"{message}",
 				message.replace(/\n/g, `\n${newlinePrefix}`)
 			);
-			this.rootConsoleLog(out);
+			this.#rootConsoleLog(out);
 		};
 	}
 };

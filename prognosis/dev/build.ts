@@ -3,16 +3,30 @@ import "./logging.js";
 
 export async function build() {
 	await fs.mkdir("./dist/editor", { recursive: true });
+	await generateModules();
 	await copyAssets();
 	await safeCopy("./project.json");
 	await safeCopy("./prognosis/main.html", "./dist/index.html");
-	await safeCopy("./prognosis/dev/editor.html", "./dist/editor/index.html");
 	await safeCopy("./prognosis/main.css");
-	await safeCopy("./prognosis/dev/editor.css");
+	await safeCopy("./prognosis/editor/editor.html", "./dist/editor/index.html");
+	await safeCopy("./prognosis/editor/editor.css");
 	console.log(`Project rebuilt`);
 }
 
 type WalkResult = { files: string[]; directories: string[] };
+
+async function generateModules() {
+	const { files: projectFiles } = await walk("./project");
+	const { files: builtinFiles } = await walk("./prognosis/nodes");
+	const sourceFiles = [...projectFiles, ...builtinFiles].filter((file) =>
+		file.endsWith(".ts")
+	);
+	const distFiles = sourceFiles.map((file) =>
+		file.replace(/^\./, "").replace(/.ts$/, ".js")
+	);
+	await fs.writeFile("./dist/modules.json", JSON.stringify(distFiles, null, 4));
+	console.log("Generated modules.json");
+}
 
 async function copyAssets() {
 	await fs.mkdir(toDistPath("./assets"), { recursive: true });

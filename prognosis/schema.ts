@@ -135,6 +135,7 @@ export class Schema<Type> {
 	constructor(
 		readonly description: string,
 		readonly errorFunction: (
+			this: Schema<Type>,
 			value: unknown,
 			path: string[]
 		) => SchemaError | undefined

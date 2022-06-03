@@ -1,5 +1,35 @@
-import { Schema } from "./schema.js";
-import { Mutable } from "./util.js";
+import { Node, NodeTypes } from "./node.js";
+import { Schema, SchemaType } from "./schema.js";
+
+const NodeSchema = Schema.object({
+	name: Schema.string,
+	type: Schema.string,
+	props: Schema.record(Schema.any),
+	children: Schema.array(Schema.string),
+});
+
+const SceneSchema = Schema.object({
+	root: Schema.string,
+	nodes: Schema.array(NodeSchema),
+});
+
+export type SceneSpec = SchemaType<typeof SceneSchema>;
+
+export class SceneAsset {
+	constructor(readonly sceneSpec: SceneSpec) {}
+
+	hydrate(name: string = this.sceneSpec.root): Node {
+		const spec = this.sceneSpec.nodes.find((node) => node.name === name);
+		if (spec === undefined) {
+			throw new Error(`Scene refers to unknown Node: "${name}!"`);
+		}
+		const node = new NodeTypes[spec.type](spec.name);
+		const children = spec.children.map((childName) => this.hydrate(childName));
+		// TODO hydrate properties
+		children.forEach((child) => node.add(child));
+		return node;
+	}
+}
 
 export class SpriteAsset {
 	constructor(readonly bitmap: ImageBitmap, readonly duration: number) {}
@@ -28,19 +58,34 @@ export class AudioAsset {
 }
 
 const AssetsClass = class Assets {
-	private pool: Record<string, Promise<any>> = {};
-	readonly loading: number = 0;
+	#loading: number = 0;
+	#pool: Record<string, Promise<any>> = {};
+
+	get loading(): number {
+		return this.#loading;
+	}
+
+	async loadScene(sceneUrl: string): Promise<SceneAsset> {
+		if (sceneUrl in this.#pool) {
+			return this.#pool[sceneUrl];
+		}
+		this.#loading += 1;
+		const sceneJson = await (await fetch(sceneUrl)).json();
+		const scene = SceneSchema.assert(sceneJson);
+		this.#loading -= 1;
+		return new SceneAsset(scene);
+	}
 
 	async loadSprite(imageUrl: string): Promise<SpriteAsset> {
-		if (imageUrl in this.pool) {
-			return this.pool[imageUrl];
+		if (imageUrl in this.#pool) {
+			return this.#pool[imageUrl];
 		}
-		(this as Mutable<this>).loading += 1;
+		this.#loading += 1;
 		const htmlImage = new Image();
 		htmlImage.src = imageUrl;
 		await new Promise((resolve) => (htmlImage.onload = resolve));
 		const sprite = await createImageBitmap(htmlImage);
-		(this as Mutable<this>).loading -= 1;
+		this.#loading -= 1;
 		return new SpriteAsset(sprite, Infinity);
 	}
 
@@ -48,10 +93,10 @@ const AssetsClass = class Assets {
 		sheetUrl: string,
 		iamgeUrl: string
 	): Promise<SpriteSheetAsset> {
-		if (sheetUrl in this.pool) {
-			return this.pool[sheetUrl];
+		if (sheetUrl in this.#pool) {
+			return this.#pool[sheetUrl];
 		}
-		(this as Mutable<this>).loading += 1;
+		this.#loading += 1;
 		const spriteAssetPromise = this.loadSprite(iamgeUrl);
 		const spriteSheetJson = await (await fetch(sheetUrl)).json();
 		const spriteSheet = SpriteSheetSchema.assert(spriteSheetJson);
@@ -70,19 +115,19 @@ const AssetsClass = class Assets {
 				frames[frameKey] = new SpriteAsset(bitmap, frame.duration);
 			})
 		);
-		(this as Mutable<this>).loading -= 1;
+		this.#loading -= 1;
 		return new SpriteSheetAsset(frames);
 	}
 
-	async loadAudio(url: string): Promise<AudioAsset> {
-		if (url in this.pool) {
-			return this.pool[url];
+	async loadAudio(audioUrl: string): Promise<AudioAsset> {
+		if (audioUrl in this.#pool) {
+			return this.#pool[audioUrl];
 		}
-		(this as Mutable<this>).loading += 1;
+		this.#loading += 1;
 		const htmlAudio = new Audio();
-		htmlAudio.src = url;
+		htmlAudio.src = audioUrl;
 		await new Promise((resolve) => (htmlAudio.onload = resolve));
-		(this as Mutable<this>).loading -= 1;
+		this.#loading -= 1;
 		return new AudioAsset(htmlAudio);
 	}
 };

@@ -12,3 +12,5 @@
 	- Time per frame spent in update, lateUpdate, render, post process
  - Physics
 	- https://developer.ibm.com/tutorials/wa-build2dphysicsengine/
+ - Better console
+	- https://jsconsole.com/
