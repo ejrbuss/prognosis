@@ -1,16 +1,67 @@
 # Prognosis
 
-## Nice to haves
- - Post Processing Shader(s)
-	- Chromatic Aberration
-	- HSL slider
-	- Film Grain
-	- Vignette
- - Dynamic 2d Lighting
-	- https://slembcke.github.io/SuperFastHardShadows
- - Profiling
-	- Time per frame spent in update, lateUpdate, render, post process
+## TODO List
+ - Editor
+	- Reset button to return scene to normal
+	- Edits
+		- Modify tree via explorer
+		- Modify nodes via inspector
+		- Modify nodes via timeline
+		- Tree
+		- Gizmos/Toolbar
+			- Icon
+			- Select tool
+			- Move tool (move)
+			- Rotate tool
+			- Scale tool (resize)
+			- Play (play)
+			- Stop (stop)
+			- Reset (play-skip-back)
+		- Preview camera
+		- Debug render for selected entity (bounds, position, etc.)
+		- Save modifcations
+		- Save indicator in title
+		- Edit/Undo
+		- Copy/Paste
+		- Enable/Disable grid + grid size
+	- Resources
+		- Allow node trees to link to other node trees with url rather than name
+		- Show resources in resources tab (thumbnails would be great)
+		- File tree explorer (maybe we can generalize the tree view)
+		- Drag nodes into explorer to start editing
+		- New node tree button
  - Physics
 	- https://developer.ibm.com/tutorials/wa-build2dphysicsengine/
- - Better console
-	- https://jsconsole.com/
+ - Nodes
+	- Audio Node
+		- Play and audio asset
+	- Emitter Node
+		- Particle types and parameters
+	- Timer Node
+		- Migrate timer to be a Node
+	- SpriteAnimation Node
+		- Specify a SpriteSheet and the keyframes, then your are done
+	- Button Node
+		- Provide a button surface
+		- Provides a clicked signal
+	- Trigger Node
+		- Provides an invisible collision surface
+		- Provides a triggered signal
+	- Animation Node
+		- Generic property animator that can be used with the timeline
+	- Tween Node
+		- Just a simplified Animation Node, that only has two key frames
+		- interpolates integer values
+	- Surface
+		- Add property clip: boolean
+		- If enabled render to offscreen canvas for proper clipping
+	- FxSurface
+		- Render to WebGL canvas (make this the root context)
+		- Load a single fragment shader - just edit this on a game by game basis
+		- Provide shader effects
+			- Chromatic Aberration
+			- HSL Slider
+			- Film Grain
+			- Vignette
+ - Dynamic 2d Lighting
+	- https://slembcke.github.io/SuperFastHardShadows

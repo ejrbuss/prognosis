@@ -1,0 +1,18 @@
+.empty {
+	flex-grow: 1;
+	padding: 32px;
+	display: flex;
+	justify-content: center;
+	flex-flow: column;
+	align-items: center;
+	font-family: var(--font-family);
+	font-size: 12px;
+	color: var(--color-subtle);
+	text-align: center;
+	user-select: none;
+}
+
+.empty .icon {
+	font-size: 48px;
+	color: var(--color-subtle);
+}

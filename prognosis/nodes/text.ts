@@ -19,4 +19,8 @@ export class Text extends Node {
 		context.textAlign = this.alignment;
 		context.fillText(this.text, 0, 0);
 	}
+
+	get icon(): string {
+		return "text-outline";
+	}
 }

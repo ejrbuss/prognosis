@@ -6,7 +6,7 @@ import { Sprite } from "../prognosis/nodes/sprite.js";
 import { Surface } from "../prognosis/nodes/surface.js";
 import { Text } from "../prognosis/nodes/text.js";
 import { Node } from "../prognosis/nodes/node.js";
-import { Key, Keyboard } from "../prognosis/input/keyboard.js";
+import { Key, Keyboard } from "../prognosis/keyboard.js";
 import { Point } from "../prognosis/data/point.js";
 import { Project } from "../prognosis/project.js";
 import { Random } from "../prognosis/random.js";
@@ -148,7 +148,6 @@ Runtime.updates.next.then(async () => {
 		}
 	}
 	const dummies = new Node("Dummies");
-	// dummies.x += 1000; // TODO debug
 	world.add(dummies);
 
 	const DummyCount = 100;

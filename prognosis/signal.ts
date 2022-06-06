@@ -19,6 +19,10 @@ export class Signal<Data = void> {
 		return this.#handlers.delete(token);
 	}
 
+	forward(signal: Signal<Data> | Signal<void>): ConnectionToken {
+		return this.connect((data) => signal.send(data as any));
+	}
+
 	get next(): Promise<Data> {
 		return new Promise((resolve) => {
 			const token = this.connect((value) => {

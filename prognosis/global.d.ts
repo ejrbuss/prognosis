@@ -3,6 +3,12 @@ import * as React from "react";
 declare global {
 	const React: typeof React;
 
+	namespace JSX {
+		interface IntrinsicElements {
+			"ion-icon": React.DetailedHTMLProps<HTMLElement>;
+		}
+	}
+
 	// Match monkey patching
 	interface Math {
 		clamp(value: number, min: number, max: number): number;

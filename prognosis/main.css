@@ -7,6 +7,10 @@ body {
 	background-color: var(--background-color);
 }
 
+*:focus {
+    outline: none;
+}
+
 #game-container {
 	position: relative;
 	width: 100vw;

@@ -22,4 +22,8 @@ export class Animation extends Node {
 				this.spriteSheetResource.frames[this.frameKey]?.spriteResource;
 		}
 	}
+
+	get icon(): string {
+		return "videocam-outline";
+	}
 }

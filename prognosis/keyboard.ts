@@ -1,4 +1,5 @@
-import { Runtime } from "../runtime.js";
+import { Graphics } from "./graphics.js";
+import { Runtime } from "./runtime.js";
 
 export enum Key {
 	Escape = "Escape",
@@ -174,10 +175,10 @@ const KeyboardClass = class Keyboard {
 	events: KeyboardEvent[] = [];
 	keyStates: Partial<Record<Key | string, KeyState>> = {};
 
-	constructor() {
+	start() {
 		const pushEvent = (event: KeyboardEvent) => this.events.push(event);
-		window.addEventListener("keydown", pushEvent);
-		window.addEventListener("keyup", pushEvent);
+		Graphics.canvas.addEventListener("keydown", pushEvent);
+		Graphics.canvas.addEventListener("keyup", pushEvent);
 		Runtime.updates.connect(this.update.bind(this));
 	}
 

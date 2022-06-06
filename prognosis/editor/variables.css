@@ -1,0 +1,10 @@
+:root {
+	--color: rgb(200, 200, 200);
+	--color-subtle: rgb(121, 123, 138);
+	--font-family: -apple-system, system-ui, sans-serif;
+	--background: rgb(34, 35, 46);
+	--background-darker: rgb(22, 22, 28);
+	--background-lighter-1: rgb(42, 43, 57);
+	--background-lighter-2: rgb(52, 55, 72);
+	--accent: rgb(233, 86, 120);
+}

@@ -1,34 +1,74 @@
-:root {
-	--text: rgb(231, 231, 231);
-	--text-subtle: rgb(121, 123, 128);
-	--font: Helvetica, sans-serif;
-	--font-mono: 'Operator Mono', 'Fira Code', 'Courier New', Courier, monospace;
-	--background-primary: rgb(34, 35, 46);
-	--background-secondary: rgb(22, 22, 28);
-	--accent: rgb(253, 67, 119);
-}
+@import "/prognosis/editor/empty.css";
+@import "/prognosis/editor/explorer.css";
+@import "/prognosis/editor/gutter.css";
+@import "/prognosis/editor/icon.css";
+@import "/prognosis/editor/inspector.css";
+@import "/prognosis/editor/preview.css";
+@import "/prognosis/editor/toolbar.css";
+@import "/prognosis/editor/variables.css";
 
 body {
 	margin: 0;
-	background: var(--background-primary);
+	background: var(--background);
 }
 
 *:focus {
     outline: none;
 }
 
-#game-container {
-	background-color: var(--background-secondary);
-	position: relative;
+h1 {
 	width: 100%;
-	height: 100%;
+	height:48px;
+	line-height: 48px;
+	margin: 0;
+	margin-left: 16px;
+	color: var(--color-subtle);
+	font-family: var(--font-family);
+	font-size: 16px;
+	font-weight: normal;
+	user-select: none;
 }
 
-#game-canvas {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
+input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+    margin: 0;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+}
+
+input {
+	border: none;
+	padding: 8px;
+	font-size: 12px;
+	font-family: var(--font-family);
+	color: var(--color);
+	background-color: var(--background-lighter-1);
+	border-radius: 4px;
+	user-select: none;
+}
+
+input.with-icon {
+	padding-right: 32px;
+}
+
+input:focus {
+	user-select: auto;
+	outline: 1px solid var(--accent);
+	background-color: var(--background-lighter-2);
+}
+
+input:read-only:focus {
+	outline: none;
+	background-color: var(--background-lighter-1);
+}
+
+input::placeholder {
+	color: var(--color-subtle) !important;
 }
 
 .editor {
@@ -36,121 +76,4 @@ body {
 	display: grid;
 	width: 100vw;
 	height: 100vh;
-}
-
-.gutter.vertical {
-	border-left: 1px solid var(--background-secondary);
-	grid-row: span 4;
-	cursor: col-resize;
-}
-
-.gutter.horizontal {
-	border-top: 1px solid var(--background-secondary);
-	cursor: row-resize;
-}
-
-.preview {
-	background-color: var(--background-secondary);
-}
-
-
-
-.column-gutter {
-	border-left: 1px solid var(--background-secondary);
-}
-
-.column-gutter:hover {
-	cursor: col-resize;
-}
-
-.row-gutter:hover {
-	cursor: row-resize;
-}
-
-h1 {
-	margin: 0;
-	padding: 0.8em;
-	color: var(--text-subtle);
-	font-family: var(--font);
-	font-weight: 200;
-	font-size: 1em;
-	user-select: none;
-}
-
-#console > h1 {
-	box-shadow: 0 4px 4px rgba(0, 0, 0, 0.2);
-}
-
-#console-output {
-	height: calc(100% - 108px);
-	width: calc(100% - 1em);
-	overflow: scroll;
-	font-size: 1em;
-	font-family: var(--font-mono);
-	color: var(--text);
-	margin-left: 1em;
-	display: block;
-	white-space: pre;
-}
-
-#console-prompt {
-	width: 1em;
-	height: 64px;
-	display: inline-block;
-	font-size: 1em;
-	font-family: var(--font-mono);
-	color: var(--text-subtle);
-	margin: 0;
-	padding-left: 1em;
-}
-
-#console-input {
-	display: inline-block;
-	width: calc(100% - 3em);
-	height: 64px;
-	background-color: var(--background-primary);
-	font-size: 1em;
-	font-family: var(--font-mono);
-	color: var(--text);
-	margin-right: 1em;
-	padding: 0;
-	border: none;
-}
-
-#explorer-container,
-#inspector-container {
-	margin: 0;
-	padding: 0;
-	height: 100%;
-}
-
-.empty-hint {
-	height: calc(100% - 128px);
-	display: flex;
-	justify-content: center;
-	flex-flow: column;
-	align-items: center;
-	font-family: var(--font);
-	font-size: 0.8em;
-	color: var(--text-subtle);
-	text-align: center;
-}
-
-.empty-hint > * {
-	cursor: pointer;
-}
-
-.explorer-node {
-	list-style-type: none;
-}
-
-.explorer-icon {
-	transform: translate(0%, 0.2em);
-	color: var(--text-subtle);
-}
-
-.explorer-name {
-	font-family: var(--font);
-	font-size: 1em;
-	color: var(--text);
 }

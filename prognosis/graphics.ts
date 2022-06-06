@@ -1,11 +1,11 @@
 import { Project } from "./project.js";
 
 const GraphicsClass = class Graphics {
-	readonly canvas: HTMLCanvasElement;
-	readonly container: HTMLElement;
-	readonly context: CanvasRenderingContext2D;
+	canvas!: HTMLCanvasElement;
+	container!: HTMLElement;
+	context!: CanvasRenderingContext2D;
 
-	constructor() {
+	start() {
 		this.canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 		this.container = document.getElementById("game-container") as HTMLElement;
 		this.container.addEventListener("resize", this.resize.bind(this));

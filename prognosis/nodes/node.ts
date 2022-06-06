@@ -9,6 +9,7 @@ export class Node {
 	localY: number = 0;
 	priority: number = 0;
 	z: number = 0;
+	visible: boolean = true;
 
 	constructor(name?: string) {
 		this.name = name ?? this.constructor.name;
@@ -143,6 +144,9 @@ export class Node {
 	}
 
 	_render(context: CanvasRenderingContext2D) {
+		if (!this.visible) {
+			return;
+		}
 		const preRender: Node[] = [];
 		const postRender: Node[] = [];
 		this.#children.forEach((child) => {
@@ -163,11 +167,44 @@ export class Node {
 		context.translate(-this.localX, -this.localY);
 	}
 
+	_debugRender(context: CanvasRenderingContext2D) {
+		const preRender: Node[] = [];
+		const postRender: Node[] = [];
+		this.#children.forEach((child) => {
+			if (child.z < 0) {
+				preRender.push(child);
+			} else {
+				postRender.push(child);
+			}
+		});
+		preRender.sort((a, b) => a.z - b.z);
+		postRender.sort((a, b) => a.z - b.z);
+		context.translate(this.localX, this.localY);
+		preRender.forEach((child) => child._debugRender(context));
+		this.debugRender(context);
+		postRender.forEach((child) => child._debugRender(context));
+		context.translate(-this.localX, -this.localY);
+	}
+
+	debugRender(context: CanvasRenderingContext2D) {
+		if (this.render !== undefined) {
+			this.render(context);
+		}
+	}
+
+	// Runtime hooks
+
 	start?(): void;
 	childrenChanged?(): void;
 	update?(): void;
 	physicsUpdate?(): void;
 	render?(context: CanvasRenderingContext2D): void;
+
+	// Editor hooks
+
+	get icon(): string {
+		return "cube-outline";
+	}
 }
 
 export const NodeTypes: Record<string, typeof Node> = { Node };

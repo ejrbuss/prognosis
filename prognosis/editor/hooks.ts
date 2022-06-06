@@ -1,4 +1,7 @@
 import { Storeable } from "../data/store.js";
+import { Node } from "../nodes/node.js";
+import { Runtime } from "../runtime.js";
+import { ModelChanges } from "./model.js";
 
 export function usePersistentState<Type extends Storeable>(
 	key: string,
@@ -18,4 +21,15 @@ export function usePersistentState<Type extends Storeable>(
 			setState(newState);
 		},
 	];
+}
+
+export function useRoot(): Node | undefined {
+	const [_, forceUpdate] = React.useState({});
+	React.useEffect(() => {
+		const token = ModelChanges.treeChange.connect(() => forceUpdate({}));
+		return () => {
+			ModelChanges.treeChange.disconnect(token);
+		};
+	}, []);
+	return Runtime.root;
 }

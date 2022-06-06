@@ -16,4 +16,8 @@ export class Rectangle extends Node {
 		context.fillRect(-w / 2, -h / 2, w, h);
 		context.restore();
 	}
+
+	get icon(): string {
+		return "square-outline";
+	}
 }

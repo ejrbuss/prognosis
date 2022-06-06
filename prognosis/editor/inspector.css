@@ -1,0 +1,58 @@
+.inspector {
+	flex-grow: 1;
+	display: flex;
+	flex-flow: column;
+}
+
+.inspector h2 {
+	flex-flow: 1;
+	padding: 12px;
+	/* padding-top: 4px;
+	padding-bottom: 4px;
+	padding-left: 12px;
+	padding-right: 12px; */
+	background-color: var(--background-lighter-1);
+	font-family: var(--font-family);
+	color: var(--color);
+	font-size: 16px;
+	font-weight: normal;
+}
+
+.inspector .row {
+	width: calc(100% - 24px);
+	display: flex;
+	flex-flow: row;
+	margin-left: 12px;
+	margin-right: 12px;
+}
+
+.inspector .node-icon {
+	color: var(--accent);
+	font-size: 24px;
+}
+
+.inspector .node-name {
+	flex-grow: 1;
+	font-size: 16px;
+	background: none;
+}
+
+.inspector .node-name:focus {
+	background-color: var(--background-lighter-2);
+}
+
+.inspector .prop-name {
+	height: 28px;
+	line-height: 28px;
+	flex-grow: 0.5;
+	font-family: var(--font-family);
+	color: var(--color-subtle);
+	font-size: 16px;
+}
+
+.inspector .prop-value {
+	flex-grow: 0.5;
+	font-family: var(--font-family);
+	color: var(--color);
+	font-size: 12px;
+}

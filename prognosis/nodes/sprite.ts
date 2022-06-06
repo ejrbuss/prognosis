@@ -54,4 +54,8 @@ export class Sprite extends Node {
 			context.restore();
 		}
 	}
+
+	get icon(): string {
+		return "color-palette-outline";
+	}
 }

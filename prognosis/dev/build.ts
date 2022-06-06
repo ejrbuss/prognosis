@@ -5,11 +5,10 @@ export async function build() {
 	await fs.mkdir("./dist/editor", { recursive: true });
 	await generateModules();
 	await copyResources();
+	await copyStyles();
 	await safeCopy("./project.json");
 	await safeCopy("./prognosis/main.html", "./dist/index.html");
-	await safeCopy("./prognosis/main.css");
 	await safeCopy("./prognosis/editor/editor.html", "./dist/editor/index.html");
-	await safeCopy("./prognosis/editor/editor.css");
 	console.log(`Project rebuilt`);
 }
 
@@ -22,7 +21,7 @@ async function generateModules() {
 		file.endsWith(".ts")
 	);
 	const distFiles = sourceFiles.map((file) =>
-		file.replace(/^\./, "").replace(/.ts$/, ".js")
+		file.replace(/^\./, "").replace(/\.ts$/, ".js")
 	);
 	await fs.writeFile("./dist/modules.json", JSON.stringify(distFiles, null, 4));
 	console.log("Generated modules.json");
@@ -33,6 +32,12 @@ async function copyResources() {
 	const { files, directories } = await walk("./resources");
 	await Promise.all(directories.map((dir) => safeMkdir(toDistPath(dir))));
 	await Promise.all(files.map((file) => safeCopy(file)));
+}
+
+async function copyStyles() {
+	const { files } = await walk("./prognosis");
+	const styles = files.filter((file) => file.endsWith(".css"));
+	await Promise.all(styles.map((style) => safeCopy(style)));
 }
 
 async function walk(root: string): Promise<WalkResult> {

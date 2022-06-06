@@ -1,6 +1,4 @@
 import "./math.js";
-import "./input/keyboard.js";
-import "./input/mouse.js";
 
 import { Schema } from "./data/schema.js";
 import { Project } from "./project.js";
