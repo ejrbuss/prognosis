@@ -1,7 +1,6 @@
-import { SceneResource } from "../resources/sceneResource.js";
 import { Runtime } from "../runtime.js";
 import { classNames } from "./classnames.js";
-import { EditorAction } from "./editorstate.js";
+import { EditorState } from "./editorstate.js";
 import { Icon } from "./icon.js";
 
 export enum Tool {
@@ -11,12 +10,10 @@ export enum Tool {
 }
 
 export type ToolbarProps = {
-	readOnly: boolean;
-	scene?: SceneResource;
-	dispatch: (action: EditorAction) => void;
+	editorState: EditorState;
 };
 
-export function Toolbar({ readOnly, scene, dispatch }: ToolbarProps) {
+export function Toolbar({ editorState }: ToolbarProps) {
 	const [tool, setTool] = React.useState(Tool.Translation);
 	const [lockGrid, setLockGrid] = React.useState(false);
 	const [showGrid, setShowGrid] = React.useState(false);
@@ -25,7 +22,7 @@ export function Toolbar({ readOnly, scene, dispatch }: ToolbarProps) {
 		Runtime.running = true;
 		Runtime.debug = false;
 		setPlaying(true);
-		dispatch(EditorAction.setReadOnly(true));
+		editorState.makeReadonly();
 	};
 	const stop = () => {
 		Runtime.running = false;
@@ -82,7 +79,7 @@ export function Toolbar({ readOnly, scene, dispatch }: ToolbarProps) {
 			<Icon
 				button
 				large
-				disabled={scene === undefined || playing}
+				disabled={editorState.scene === undefined || playing}
 				onClick={play}
 				title="Play"
 				icon="play-outline"
@@ -90,7 +87,7 @@ export function Toolbar({ readOnly, scene, dispatch }: ToolbarProps) {
 			<Icon
 				button
 				large
-				disabled={scene === undefined || !playing}
+				disabled={editorState.scene === undefined || !playing}
 				onClick={stop}
 				title="Stop"
 				icon="stop-outline"
@@ -98,10 +95,8 @@ export function Toolbar({ readOnly, scene, dispatch }: ToolbarProps) {
 			<Icon
 				button
 				large
-				disabled={scene === undefined || !readOnly}
-				onClick={() => {
-					dispatch(EditorAction.loadScene(scene as SceneResource));
-				}}
+				disabled={editorState.scene === undefined || !editorState.readOnly}
+				onClick={() => editorState.resetScene()}
 				title="Reset"
 				icon="play-skip-back-outline"
 			/>

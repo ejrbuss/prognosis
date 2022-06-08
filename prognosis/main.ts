@@ -2,7 +2,7 @@ import "./math.js";
 
 import { Schema } from "./data/schema.js";
 import { Project } from "./project.js";
-import { Node, NodeTypes } from "./nodes/node.js";
+import { Node, NodeTypes, NodeTypeSourceLocation } from "./nodes/node.js";
 import { Resources } from "./resources/resources.js";
 import { Runtime } from "./runtime.js";
 import { SceneResource } from "./resources/sceneResource.js";
@@ -19,6 +19,7 @@ await Promise.all(
 			// Register NodeTypes
 			if (typeof value === "function" && value.prototype instanceof Node) {
 				NodeTypes[value.name] = value as typeof Node;
+				NodeTypeSourceLocation[value.name] = modulePath;
 			}
 		});
 	})

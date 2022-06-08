@@ -5,6 +5,10 @@ import { Point } from "./data/point.js";
 import { JsonData } from "./data/store.js";
 import { Schema } from "./data/schema.js";
 import { Runtime } from "./runtime.js";
+import { useRerender } from "./editor/hooks.js";
+import { Icon } from "./editor/icon.js";
+import { classNames } from "./editor/classnames.js";
+import { Fragment } from "react";
 
 class Property<Type> {
 	constructor(
@@ -71,23 +75,21 @@ export class Inspector {
 			fromJson: (json) => property.set(Schema.boolean.assert(json)),
 		};
 		this.components.push(({ readOnly }) => {
-			const [checked, setChecked] = React.useState(property.get());
-			const [focus, setFocus] = React.useState(false);
+			const rerender = useRerender();
+			const checked = property.get();
 			return (
 				<div className="property">
 					<div className="property-name">{property.name}</div>
 					<div className="property-value">
-						<input
-							type="checkbox"
-							readOnly={readOnly}
-							checked={focus && !readOnly ? checked : property.get()}
-							onChange={() => {
-								const newChecked = !checked;
-								property.set(newChecked);
-								setChecked(newChecked);
+						<Icon
+							button
+							medium
+							icon="ellipse"
+							className={classNames("checkbox", { checked })}
+							onClick={() => {
+								property.set(!property.get());
+								rerender();
 							}}
-							onFocus={() => setFocus(true)}
-							onBlur={() => setFocus(false)}
 						/>
 					</div>
 				</div>
@@ -109,7 +111,7 @@ export class Inspector {
 					<div className="property-value">
 						<input
 							type="number"
-							readOnly={readOnly}
+							disabled={readOnly}
 							value={focus && !readOnly ? value : property.get()}
 							onChange={(event) => {
 								property.set(event.target.valueAsNumber);
@@ -124,9 +126,101 @@ export class Inspector {
 		});
 	}
 
-	inspectString(property: Property<string>) {}
+	inspectString(property: Property<string>) {
+		this.storeables[property.name] = {
+			toJson: () => property.get(),
+			fromJson: (json) => property.set(Schema.string.assert(json)),
+		};
+		this.components.push(({ readOnly }) => {
+			const rerender = useRerender();
+			return (
+				<div className="property">
+					<div className="property-name">{property.name}</div>
+					<div className="property-value">
+						<input
+							type="text"
+							disabled={readOnly}
+							value={property.get()}
+							onChange={(event) => {
+								property.set(event.target.value);
+								rerender();
+							}}
+						/>
+					</div>
+				</div>
+			);
+		});
+	}
 
-	inspectColor(property: Property<Color>) {}
+	inspectColor(property: Property<Color>) {
+		this.storeables[property.name] = {
+			toJson: () => property.get().value,
+			fromJson: (json) => property.set(new Color(Schema.number.assert(json))),
+		};
+		this.components.push(({ readOnly }) => {
+			const colorRef = React.useRef<HTMLInputElement>(null);
+			const rerender = useRerender();
+			return (
+				<React.Fragment>
+					<div className="property">
+						<div className="property-name">{property.name}</div>
+						<div className="property-value">
+							<div className="color-patch">
+								<div
+									className="color"
+									tabIndex={0}
+									style={{ backgroundColor: property.get().hex }}
+									onClick={() => {
+										if (colorRef.current !== null) {
+											colorRef.current.click();
+										}
+									}}
+								/>
+								<input
+									hidden
+									ref={colorRef}
+									type="color"
+									value={property.get().hex.substring(0, 7)}
+									disabled={readOnly}
+									onChange={(event) => {
+										const hex = parseInt(event.target.value.substring(1), 0x10);
+										property.set(
+											Color.rgba(
+												((hex >> 0x10) & 0xff) / 255,
+												((hex >> 0x8) & 0xff) / 255,
+												(hex & 0xff) / 255,
+												property.get().alpha
+											)
+										);
+										rerender();
+									}}
+								/>
+							</div>
+						</div>
+					</div>
+					<div className="property">
+						<div className="property-name">{property.name}.alpha</div>
+						<div className="property-value">
+							<input
+								type="range"
+								min={0}
+								max={1}
+								step={1 / 255}
+								disabled={readOnly}
+								value={property.get().alpha.toString()}
+								onChange={(event) => {
+									property.set(
+										property.get().with({ alpha: event.target.valueAsNumber })
+									);
+									rerender();
+								}}
+							/>
+						</div>
+					</div>
+				</React.Fragment>
+			);
+		});
+	}
 
 	inspectPoint(property: Property<Point>) {
 		this.inspectNumber({
@@ -144,7 +238,40 @@ export class Inspector {
 	inspectEnum<Enum>(
 		property: Property<Enum>,
 		enumValues: Record<string, Enum>
-	) {}
+	) {
+		const keys = Object.keys(enumValues);
+		const values = Object.values(enumValues);
+		const keyOf = (value: Enum) => keys[values.indexOf(value)];
+		const valueOf = (key: string) => values[keys.indexOf(key)];
+		this.storeables[property.name] = {
+			toJson: () => keyOf(property.get()),
+			fromJson: (json) => property.set(valueOf(Schema.string.assert(json))),
+		};
+		this.components.push(({ readOnly }) => {
+			const rerender = useRerender();
+			return (
+				<div className="property">
+					<div className="property-name">{property.name}</div>
+					<div className="property-value">
+						<select
+							disabled={readOnly}
+							value={keyOf(property.get())}
+							onChange={(event) => {
+								property.set(valueOf(event.target.value));
+								rerender();
+							}}
+						>
+							{keys.map((key, i) => (
+								<option key={i} value={key}>
+									{key}
+								</option>
+							))}
+						</select>
+					</div>
+				</div>
+			);
+		});
+	}
 
 	inspectEasing(property: Property<Easing>) {
 		this.inspectEnum(property, Easing);

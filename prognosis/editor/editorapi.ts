@@ -13,4 +13,11 @@ export namespace EditorApi {
 		).json();
 		return Schema.string.assert(jsonResponse);
 	}
+
+	export async function openFileUrl(fileUrl: string): Promise<void> {
+		await fetch("/editor/api/openFileUrl", {
+			method: "post",
+			body: JSON.stringify({ fileUrl }),
+		});
+	}
 }

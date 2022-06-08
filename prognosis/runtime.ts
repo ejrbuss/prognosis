@@ -37,6 +37,21 @@ const RuntimeClass = class Runtime {
 		this.rootChanges.send();
 	}
 
+	find(path: string): Node | undefined {
+		const seperator = path.indexOf("/");
+		if (seperator === -1) {
+			throw new Error(`Invalid  Node path "${path}"!`);
+		}
+		const name = path.substring(0, seperator);
+		if (this.#root?.name !== name) {
+			return;
+		}
+		if (path.length === name.length + 1) {
+			return this.#root;
+		}
+		return this.#root.find(path.substring(seperator + 1));
+	}
+
 	start() {
 		Graphics.start();
 		Keyboard.start();

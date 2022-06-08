@@ -1,10 +1,7 @@
 import {
-	EditorAction,
-	editorReducer,
 	GridConstants,
 	GridConstraints,
-	InitialEditorState,
-	loadEditorState,
+	useEditorState,
 } from "./editorstate.js";
 import { Explorer } from "./explorer.js";
 import { Gutter } from "./gutter.js";
@@ -15,11 +12,8 @@ import { Timeline } from "./timeline.js";
 import { Toolbar } from "./toolbar.js";
 
 export function Editor() {
+	const editorState = useEditorState();
 	const rerender = useRerender();
-	const [editorState, dispatch] = React.useReducer(
-		editorReducer,
-		InitialEditorState
-	);
 	React.useEffect(() => {
 		const listener = () => rerender();
 		window.addEventListener("resize", listener);
@@ -45,29 +39,15 @@ export function Editor() {
 				].join(" "),
 			}}
 		>
-			<Toolbar
-				readOnly={editorState.readOnly}
-				scene={editorState.scene}
-				dispatch={dispatch}
-			/>
-			<Gutter
-				vertical
-				onDrag={(delta) => dispatch(EditorAction.resizeInspector(delta))}
-			/>
-			<Inspector
-				readOnly={editorState.readOnly}
-				selectedNode={editorState.selectedNode}
-				nodeInspector={editorState.inspector}
-			/>
-			<Gutter
-				vertical
-				onDrag={(delta) => dispatch(EditorAction.resizeExplorer(delta))}
-			/>
-			<Explorer selectedNode={editorState.selectedNode} dispatch={dispatch} />
+			<Toolbar editorState={editorState} />
+			<Gutter vertical onDrag={(delta) => editorState.resizeInspector(delta)} />
+			<Inspector editorState={editorState} />
+			<Gutter vertical onDrag={(delta) => editorState.resizeExplorer(delta)} />
+			<Explorer editorState={editorState} />
 			<Preview />
 			<Gutter
 				horizontal
-				onDrag={(delta) => dispatch(EditorAction.resizeTimeline(delta))}
+				onDrag={(delta) => editorState.resizeTimeline(delta)}
 			/>
 			<Timeline />
 		</div>

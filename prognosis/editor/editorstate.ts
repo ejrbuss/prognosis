@@ -1,9 +1,21 @@
-import { Node } from "../nodes/node.js";
-import { SceneResource } from "../resources/sceneResource.js";
-import { Inspector as NodeInspector } from "../inspector.js";
 import { Store } from "../data/store.js";
-import { Runtime } from "../runtime.js";
+import { Inspector } from "../inspector.js";
+import { Node } from "../nodes/node.js";
 import { Resources } from "../resources/resources.js";
+import { SceneResource } from "../resources/sceneResource.js";
+import { Runtime } from "../runtime.js";
+import { Signal } from "../signal.js";
+
+export function useEditorState() {
+	const [_, forceUpdate] = React.useState({});
+	React.useEffect(() => {
+		const token = stateChanges.connect(() => forceUpdate({}));
+		return () => {
+			stateChanges.disconnect(token);
+		};
+	}, []);
+	return editorState;
+}
 
 export const GridConstants = {
 	GutterSize: 1,
@@ -21,160 +33,143 @@ export type GridConstraints = {
 	desiredTimelineHeight: number;
 };
 
-export enum Tool {
-	Transform = "Transform",
-	Scale = "Scale",
-	Rotate = "Rotate",
-}
-
-export type EditorState = {
-	gridConstraints: GridConstraints;
-	scene?: SceneResource;
-	selectedNode?: Node;
-	inspector?: NodeInspector;
-	nodeExpansions: Partial<Record<number, true>>;
-	running: boolean;
-	readOnly: boolean;
-};
-
-type StoredEditorState = {
+type EditorStore = Store<{
 	gridConstraints: GridConstraints;
 	sceneUrl?: string;
 	selectedNodePath?: string;
-	nodeExpansions: Partial<Record<string, true>>;
-};
+	nodeExpansions: Partial<Record<string, boolean>>;
+}>;
 
-const editorStore = new Store<StoredEditorState>("editor.state", {
-	gridConstraints: {
-		desiredInspectorWidth: 300,
-		desiredExplorerWidth: 300,
-		desiredTimelineHeight: 300,
-	},
-	nodeExpansions: {},
-});
+export function _loadSceneFromStore() {
+	editorState._loadSceneFromStore();
+}
 
-export async function loadEditorState(
-	dispatch: (action: EditorAction) => void
-) {
-	if (editorStore.value.sceneUrl !== undefined) {
-		try {
-			const scene = await Resources.load(
-				SceneResource,
-				editorStore.value.sceneUrl
-			);
-			dispatch(EditorAction.loadScene(scene));
-			const selectedNodePath = editorStore.value.selectedNodePath;
-			if (selectedNodePath !== undefined) {
-				const selectedNode = Runtime.root.find(selectedNodePath);
-				if (selectedNode !== undefined) {
-					dispatch(EditorAction.selectNode(selectedNode));
-				}
-			}
-		} catch (error) {
-			console.error(error);
+export class EditorState {
+	#store: EditorStore = new Store("editor.store", {
+		gridConstraints: {
+			desiredInspectorWidth: 300,
+			desiredExplorerWidth: 300,
+			desiredTimelineHeight: 300,
+		},
+		nodeExpansions: {},
+	});
+	#scene?: SceneResource;
+	#selectedNode?: Node;
+	#inspector?: Inspector;
+	#readOnly: boolean = false;
+
+	get gridConstraints(): GridConstraints {
+		return this.#store.value.gridConstraints;
+	}
+
+	get scene(): SceneResource | undefined {
+		return this.#scene;
+	}
+
+	get selectedNode(): Node | undefined {
+		return this.#selectedNode;
+	}
+
+	get inspector(): Inspector | undefined {
+		return this.#inspector;
+	}
+
+	get readOnly(): boolean {
+		return this.#readOnly;
+	}
+
+	nodeExpanded(node: Node): boolean {
+		return this.#store.value.nodeExpansions[node.path] === true;
+	}
+
+	async _loadSceneFromStore() {
+		const sceneUrl = this.#store.value.sceneUrl;
+		if (sceneUrl !== undefined) {
+			this.#scene = await Resources.load(SceneResource, sceneUrl);
+			this.resetScene();
 		}
+	}
+
+	resetScene() {
+		(Runtime.root as any) = this.#scene?.buildRoot();
+		const selectedNodePath = this.#store.value.selectedNodePath;
+		if (Runtime.root !== undefined && selectedNodePath !== undefined) {
+			this.#selectedNode = Runtime.find(selectedNodePath);
+			this.#inspector = new Inspector();
+			this.#selectedNode?._inspect(this.#inspector);
+		} else {
+			this.#selectedNode = undefined;
+		}
+		this.#readOnly = false;
+		stateChanges.send();
+	}
+
+	async loadScene(sceneUrl: string) {
+		const scene = await Resources.load(SceneResource, sceneUrl);
+		this.#store.value.sceneUrl = sceneUrl;
+		this.#store.value.selectedNodePath = undefined;
+		this.#store.value.nodeExpansions = {};
+		this.#scene = scene;
+		this.#store.save();
+		this.resetScene();
+	}
+
+	selectNode(node: Node) {
+		if (node === this.#selectedNode) {
+			return;
+		}
+		this.#selectedNode = node;
+		this.#inspector = new Inspector();
+		this.#selectedNode._inspect(this.#inspector);
+		this.#store.value.selectedNodePath = node.path;
+		this.#store.save();
+		stateChanges.send();
+	}
+
+	makeReadonly() {
+		if (this.#readOnly) {
+			return;
+		}
+		this.#readOnly = true;
+		stateChanges.send();
+	}
+
+	toggleNodeExpansion(node: Node) {
+		const expanded = this.nodeExpanded(node);
+		this.#store.value.nodeExpansions[node.path] = !expanded;
+		this.#store.save();
+		stateChanges.send();
+	}
+
+	resizeInspector(delta: number) {
+		if (delta === 0) {
+			return;
+		}
+		this.#store.value.gridConstraints.desiredInspectorWidth -= delta;
+		this.#store.save();
+		stateChanges.send();
+	}
+
+	resizeExplorer(delta: number) {
+		if (delta === 0) {
+			return;
+		}
+		this.#store.value.gridConstraints.desiredExplorerWidth -= delta;
+		this.#store.save();
+		stateChanges.send();
+	}
+
+	resizeTimeline(delta: number) {
+		if (delta === 0) {
+			return;
+		}
+		this.#store.value.gridConstraints.desiredTimelineHeight -= delta;
+		this.#store.save();
+		stateChanges.send();
 	}
 }
 
-export const InitialEditorState: EditorState = {
-	gridConstraints: editorStore.value.gridConstraints,
-	nodeExpansions: {},
-	running: false,
-	readOnly: false,
-};
+const stateChanges = new Signal();
+const editorState = new EditorState();
 
-export namespace EditorAction {
-	export function resizeInspector(dx: number) {
-		return { type: "resizeInspector", dx } as const;
-	}
-
-	export function resizeExplorer(dx: number) {
-		return { type: "resizeExplorer", dx } as const;
-	}
-
-	export function resizeTimeline(dy: number) {
-		return { type: "resizeTimeline", dy } as const;
-	}
-
-	export function loadScene(scene: SceneResource) {
-		return { type: "loadScene", scene } as const;
-	}
-
-	export function selectNode(node: Node) {
-		return { type: "selectNode", node } as const;
-	}
-
-	export function setReadOnly(readOnly: boolean) {
-		return { type: "setReadOnly", readOnly } as const;
-	}
-}
-
-export type EditorAction = {
-	[actionConstructor in keyof typeof EditorAction]: ReturnType<
-		typeof EditorAction[actionConstructor]
-	>;
-}[keyof typeof EditorAction];
-
-export function editorReducer(
-	state: EditorState,
-	action: EditorAction
-): EditorState {
-	switch (action.type) {
-		case "resizeInspector": {
-			const gridConstraints = {
-				...state.gridConstraints,
-				desiredInspectorWidth: Math.max(
-					GridConstants.InspectorMinWidth,
-					state.gridConstraints.desiredInspectorWidth - action.dx
-				),
-			};
-			editorStore.value.gridConstraints = gridConstraints;
-			editorStore.save();
-			return { ...state, gridConstraints };
-		}
-		case "resizeExplorer": {
-			const gridConstraints = {
-				...state.gridConstraints,
-				desiredExplorerWidth: Math.max(
-					GridConstants.ExplorerMinWidth,
-					state.gridConstraints.desiredExplorerWidth - action.dx
-				),
-			};
-			editorStore.value.gridConstraints = gridConstraints;
-			editorStore.save();
-			return { ...state, gridConstraints };
-		}
-		case "resizeTimeline": {
-			const gridConstraints = {
-				...state.gridConstraints,
-				desiredTimelineHeight: Math.max(
-					GridConstants.TimelineMinHeight,
-					state.gridConstraints.desiredTimelineHeight - action.dy
-				),
-			};
-			editorStore.value.gridConstraints = gridConstraints;
-			editorStore.save();
-			return { ...state, gridConstraints };
-		}
-		case "loadScene": {
-			editorStore.value.sceneUrl = action.scene.url;
-			editorStore.save();
-			Runtime.root = action.scene.buildRoot();
-			return { ...state, scene: action.scene, readOnly: false };
-		}
-		case "setReadOnly": {
-			if (state.readOnly === action.readOnly) {
-				return state;
-			}
-			return { ...state, readOnly: action.readOnly };
-		}
-		case "selectNode": {
-			if (state.selectedNode === action.node) {
-				return state;
-			}
-			const inspector = new NodeInspector();
-			action.node._inspect(inspector);
-			return { ...state, selectedNode: action.node, inspector };
-		}
-	}
-}
+(window as any).editorState = editorState;

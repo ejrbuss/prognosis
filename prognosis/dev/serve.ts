@@ -1,7 +1,9 @@
 import http from "http";
 import path from "path";
 import fs from "fs/promises";
+import child_process from "child_process";
 import { walk } from "./walk.js";
+
 import "./logging.js";
 
 const Host = "localhost";
@@ -77,16 +79,29 @@ async function editorApi(
 			const name = body.name;
 			const size = body.size;
 			for await (const fileStats of walk("./dist")) {
-				if (fileStats.name === name) {
-					console.log(fileStats.name, fileStats.size);
-				}
 				if (fileStats.name === name && fileStats.size === size) {
 					response.writeHead(200);
 					response.end(JSON.stringify(fileStats.path.replace("./dist", "")));
+					return;
 				}
 			}
 			throw new Error("No file found!");
 		}
+		if (request.url === "/editor/api/openFileUrl") {
+			const body = await jsonBody(request);
+			const filePath = `./${body.fileUrl.replace(/\.js$/, ".ts")}`;
+			const child = child_process.spawn(`code ${filePath}`, { shell: true });
+			child.on("exit", () => {
+				response.writeHead(200);
+				response.end();
+			});
+			child.on("error", (error) => {
+				response.writeHead(500);
+				response.end(error.stack);
+			});
+			return;
+		}
+		throw new Error("Unknown API endpoint!");
 	} catch (error) {
 		response.writeHead(500);
 		response.end((error as Error).stack);

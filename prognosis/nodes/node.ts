@@ -2,17 +2,32 @@ import { Point } from "../data/point.js";
 import { Inspector, propertiesOf } from "../inspector.js";
 
 export class Node {
+	#name: string;
 	#started: boolean = false;
 	#parent?: Node;
 	#children: Node[] = [];
-	readonly name: string;
 	localX: number = 0;
 	localY: number = 0;
 	z: number = 0;
 	priority: number = 0;
 
-	constructor(name?: string) {
-		this.name = name ?? this.constructor.name;
+	constructor(name: string) {
+		this.#name = name ?? this.constructor.name;
+	}
+
+	get name(): string {
+		return this.#name;
+	}
+
+	set name(name: string) {
+		if (
+			this.#parent?.children.some(
+				(childNode) => childNode !== this && childNode.name === name
+			)
+		) {
+			throw new Error("TODO fix name");
+		}
+		this.#name = name;
 	}
 
 	get path(): string {
@@ -241,4 +256,5 @@ export class Node {
 	}
 }
 
-export const NodeTypes: Record<string, typeof Node> = { Node };
+export const NodeTypes: Record<string, typeof Node> = {};
+export const NodeTypeSourceLocation: Record<string, string> = {};

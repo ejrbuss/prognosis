@@ -1,3 +1,4 @@
+import "../math.js";
 import { Tweenable } from "../tween.js";
 
 export type RgbaProps = {
@@ -173,8 +174,7 @@ export class Color implements Tweenable<Color> {
 			);
 		}
 		return new Color(
-			this.value &
-				(0xffffff00 + Math.clamp(props.alpha ?? this.alpha, 0, 1) * 255)
+			(this.value & ~0xff) | (Math.clamp(props.alpha ?? this.alpha, 0, 1) * 255)
 		);
 	}
 

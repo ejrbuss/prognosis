@@ -2,6 +2,8 @@
 	flex-grow: 1;
 	display: flex;
 	flex-flow: column;
+	overflow-x: hidden;
+	overflow-y: scroll;
 }
 
 .inspector h2 {
@@ -38,7 +40,11 @@
 }
 
 .inspector .property {
+	display: flex;
+	flex-flow: row;
 	width: calc(100% - 24px);
+	height: 28px;
+	justify-items: center;
 	margin-left: 12px;
 	margin-right: 12px;
 	margin-top: 2px;
@@ -46,11 +52,10 @@
 }
 
 .inspector .property-name {
-	display: inline-block;
-	width: calc(50% - 12px);
+	flex: 1;
+	display: flex;
 	margin: 0;
 	padding: 0;
-	height: 28px;
 	line-height: 28px;
 	font-family: var(--font-family);
 	color: var(--color-subtle);
@@ -58,8 +63,9 @@
 }
 
 .inspector .property-value {
-	display: inline-block;
-	width: 50%;
+	flex: 1;
+	display: flex;
+	flex-flow: row;
 	margin: 0;
 	padding: 0;
 	font-family: var(--font-family);
@@ -68,9 +74,44 @@
 }
 
 .inspector .property-value input {
-	width: 100%;
+	flex-grow: 1;
 }
 
 .inspector .property-value input[type=number] {
 	text-align: right;
+}
+
+.inspector .property-value select {
+	flex: 1;
+}
+
+.inspector .property-value .checkbox.icon {
+	width: 16px;
+	border-radius: 12px;
+	padding-top: 2px;
+	padding-bottom: 2px;
+	padding-left: 4px;
+	padding-right: 20px;
+	background-color: var(--background-lighter-1);
+	transition: color 0.1s, padding 0.1s;
+}
+
+.inspector .property-value .checkbox.icon.checked {
+	padding-left: 20px;
+	padding-right: 4px;
+	color: var(--accent);
+}
+
+.inspector .property-value .color-patch {
+	display: flex;
+	flex: 1;
+	border-radius: 4px;
+	height: 28px;
+	background-color: white;
+}
+
+.inspector .property-value .color-patch .color {
+	flex: 1;
+	border-radius: 4px;
+	height: 28px;
 }

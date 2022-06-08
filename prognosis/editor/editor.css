@@ -41,7 +41,13 @@ input[type=number]::-webkit-outer-spin-button {
       margin: 0;
 }
 
-input {
+input[type=range] {
+	padding-left: 0;
+	padding-right: 0;
+}
+
+input,
+select {
 	border: none;
 	padding: 8px;
 	font-size: 12px;
@@ -49,24 +55,30 @@ input {
 	color: var(--color);
 	background-color: var(--background-lighter-1);
 	border-radius: 4px;
-	user-select: none;
+}
+
+select {
+	padding-top: 4px;
+	padding-bottom: 4px;
 }
 
 input.with-icon {
 	padding-right: 32px;
 }
 
-input:focus {
-	user-select: auto;
+input:focus,
+select:focus {
 	outline: 1px solid var(--accent);
 	background-color: var(--background-lighter-2);
 }
 
-input:read-only {
+input:disabled,
+select:disabled {
 	color: var(--color-subtle);
 }
 
-input:read-only:focus {
+input:read-only:focus,
+select:read-only:focus {
 	outline: none;
 	background-color: var(--background-lighter-1);
 }

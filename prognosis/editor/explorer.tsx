@@ -1,19 +1,21 @@
 import { Node } from "../nodes/node.js";
-import { Resources } from "../resources/resources.js";
-import { SceneResource } from "../resources/sceneResource.js";
 import { Runtime } from "../runtime.js";
 import { classNames } from "./classnames.js";
 import { EditorApi } from "./editorapi.js";
-import { EditorAction } from "./editorstate.js";
+import { EditorState } from "./editorstate.js";
 import { Empty } from "./empty.js";
+import { useInterval } from "./hooks.js";
 import { Icon } from "./icon.js";
 
-export type ExplorerProps = {
-	selectedNode?: Node;
-	dispatch: (action: EditorAction) => void;
+type ExplorerProps = {
+	editorState: EditorState;
 };
 
-export function Explorer({ selectedNode, dispatch }: ExplorerProps) {
+export function Explorer({ editorState }: ExplorerProps) {
+	useInterval(100);
+	const [filterValue, setFilterValue] = React.useState("");
+	const nodeVisibilty: Record<string, boolean> = {};
+	filterNode(Runtime.root, filterValue.toLowerCase(), nodeVisibilty);
 	const sceneFileRef = React.useRef<HTMLInputElement>(null);
 	const root = Runtime.root;
 	const openScene = () => {
@@ -41,8 +43,7 @@ export function Explorer({ selectedNode, dispatch }: ExplorerProps) {
 						const files = event.target.files;
 						if (files !== null && files.length > 0) {
 							const sceneUrl = await EditorApi.getFileUrl(files[0]);
-							const scene = await Resources.load(SceneResource, sceneUrl);
-							dispatch(EditorAction.loadScene(scene));
+							editorState.loadScene(sceneUrl);
 						}
 					}}
 				/>
@@ -53,6 +54,8 @@ export function Explorer({ selectedNode, dispatch }: ExplorerProps) {
 						placeholder="filter nodes"
 						size={8}
 						type="text"
+						value={filterValue}
+						onChange={(event) => setFilterValue(event.target.value)}
 					/>
 					<Icon large className="input-icon" icon="search-outline" />
 				</div>
@@ -70,8 +73,8 @@ export function Explorer({ selectedNode, dispatch }: ExplorerProps) {
 					<NodeTree
 						node={root}
 						depth={0}
-						selectedNode={selectedNode}
-						dispatch={dispatch}
+						nodeVisibility={nodeVisibilty}
+						editorState={editorState}
 					/>
 				</div>
 			)}
@@ -82,15 +85,18 @@ export function Explorer({ selectedNode, dispatch }: ExplorerProps) {
 type NodeTreeProps = {
 	node: Node;
 	depth: number;
-	selectedNode?: Node;
-	dispatch: (action: EditorAction) => void;
+	nodeVisibility: Record<string, boolean>;
+	editorState: EditorState;
 };
 
-function NodeTree({ node, depth, selectedNode, dispatch }: NodeTreeProps) {
-	const [expanded, setExpanded] = React.useState(false);
+function NodeTree({ node, depth, nodeVisibility, editorState }: NodeTreeProps) {
 	const [dragging, setDragging] = React.useState(false);
 	const [over, setOver] = React.useState(false);
-	let expandIcon = "";
+	if (!nodeVisibility[node.path]) {
+		return <React.Fragment />;
+	}
+	const expanded = editorState.nodeExpanded(node);
+	let expandIcon = "invisible-icon";
 	if (node.children.length > 0) {
 		expandIcon = expanded ? "chevron-down-outline" : "chevron-forward-outline";
 	}
@@ -111,11 +117,11 @@ function NodeTree({ node, depth, selectedNode, dispatch }: NodeTreeProps) {
 					// TODO handle drops
 				}}
 				onClick={() => {
-					setExpanded(!expanded);
-					dispatch(EditorAction.selectNode(node));
+					editorState.toggleNodeExpansion(node);
+					editorState.selectNode(node);
 				}}
 				className={classNames("node", {
-					selected: selectedNode === node,
+					selected: editorState.selectedNode === node,
 					dragging,
 					over,
 				})}
@@ -132,8 +138,8 @@ function NodeTree({ node, depth, selectedNode, dispatch }: NodeTreeProps) {
 						<NodeTree
 							node={child}
 							depth={depth + 1}
-							selectedNode={selectedNode}
-							dispatch={dispatch}
+							nodeVisibility={nodeVisibility}
+							editorState={editorState}
 						/>
 					</li>
 				))
@@ -142,4 +148,22 @@ function NodeTree({ node, depth, selectedNode, dispatch }: NodeTreeProps) {
 			)}
 		</ul>
 	);
+}
+
+function filterNode(
+	node: Node,
+	filterValue: string,
+	nodeVisiblity: Record<string, boolean>
+): boolean {
+	if (node === undefined) {
+		return false;
+	}
+	const childAdded = node.children.reduce(
+		(added, childNode) =>
+			filterNode(childNode, filterValue, nodeVisiblity) || added,
+		false
+	);
+	let visible = childAdded || node.name.toLowerCase().includes(filterValue);
+	nodeVisiblity[node.path] = visible;
+	return visible;
 }

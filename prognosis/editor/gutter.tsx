@@ -14,6 +14,8 @@ export function Gutter({ horizontal, vertical, onDrag }: GutterProps) {
 				if (event.buttons === 0) {
 					setSelected(false);
 				} else {
+					event.stopPropagation();
+					event.preventDefault();
 					if (horizontal) {
 						onDrag(event.movementY);
 					} else {
