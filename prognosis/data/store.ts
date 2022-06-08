@@ -1,38 +1,35 @@
-import { Signal } from "../signal.js";
-
-export type Storeable =
+export type JsonData =
 	| boolean
 	| number
 	| string
-	| Storeable[]
-	| { [property: string]: Storeable };
+	| JsonData[]
+	| { [property: string]: JsonData | undefined };
 
-export class Store<Data extends Storeable> {
-	#data: Data;
-	readonly change: Signal<Data> = new Signal();
+export class Store<Data extends JsonData> {
+	#value: Data;
 
 	constructor(readonly key: string, readonly defaultValue: Data) {
-		this.#data = defaultValue;
+		this.#value = defaultValue;
 		this.load();
 	}
 
-	get data(): Data {
-		return this.#data;
+	get value(): Data {
+		return this.#value;
 	}
 
-	set data(data: Data) {
-		this.#data = data;
+	set value(data: Data) {
+		this.#value = data;
 		this.save();
 	}
 
 	load() {
 		const storageValue = localStorage.getItem(this.key);
 		if (storageValue !== null) {
-			this.#data = JSON.parse(storageValue);
+			this.#value = JSON.parse(storageValue);
 		}
 	}
 
 	save() {
-		localStorage.setItem(this.key, JSON.stringify(this.#data));
+		localStorage.setItem(this.key, JSON.stringify(this.#value));
 	}
 }

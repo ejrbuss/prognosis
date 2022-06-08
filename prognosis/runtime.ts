@@ -10,8 +10,8 @@ const RuntimeClass = class Runtime {
 	#stopTime: number = 0;
 	#now: number = 0;
 	#dt: number = 0;
-	updates: Signal = new Signal();
-	rootChanges: Signal = new Signal();
+	updates: Signal = new Signal(); // TODO kill this
+	rootChanges: Signal = new Signal(); // TODO kill this
 	timeScale: number = 1;
 	editorMode: boolean = false;
 	running: boolean = false;
@@ -31,7 +31,7 @@ const RuntimeClass = class Runtime {
 
 	set root(node: Node) {
 		this.#root = node;
-		if (this.running && !node.started) {
+		if (this.running && node !== undefined && !node.started) {
 			node._start();
 		}
 		this.rootChanges.send();

@@ -1,4 +1,5 @@
 import { Point } from "../data/point.js";
+import { Inspector, propertiesOf } from "../inspector.js";
 
 export class Node {
 	#started: boolean = false;
@@ -7,12 +8,15 @@ export class Node {
 	readonly name: string;
 	localX: number = 0;
 	localY: number = 0;
-	priority: number = 0;
 	z: number = 0;
-	visible: boolean = true;
+	priority: number = 0;
 
 	constructor(name?: string) {
 		this.name = name ?? this.constructor.name;
+	}
+
+	get path(): string {
+		return `${this.#parent?.path ?? ""}${this.name}/`;
 	}
 
 	get started(): boolean {
@@ -57,7 +61,25 @@ export class Node {
 		this.y = position.y;
 	}
 
+	find(path: string): Node | undefined {
+		const seperator = path.indexOf("/");
+		if (seperator === -1) {
+			throw new Error(`Invalid  Node path "${path}"!`);
+		}
+		const name = path.substring(0, seperator);
+		const child = this.children.find((child) => child.name === name);
+		if (path.length === name.length + 1) {
+			return child;
+		}
+		return child?.find(path.substring(seperator + 1));
+	}
+
 	add(node: Node) {
+		if (this.children.some((child) => child.name === node.name)) {
+			throw Error(
+				`Cannot add Node "${node.name}" to ${this.name}, child with the same name already exists!`
+			);
+		}
 		if (node.#parent === this) {
 			return;
 		}
@@ -144,9 +166,6 @@ export class Node {
 	}
 
 	_render(context: CanvasRenderingContext2D) {
-		if (!this.visible) {
-			return;
-		}
 		const preRender: Node[] = [];
 		const postRender: Node[] = [];
 		this.#children.forEach((child) => {
@@ -201,6 +220,21 @@ export class Node {
 	render?(context: CanvasRenderingContext2D): void;
 
 	// Editor hooks
+
+	_inspect(inspector: Inspector) {
+		const properties = propertiesOf(this);
+		inspector.header("Node Properties");
+		inspector.inspectNumber(properties.x);
+		inspector.inspectNumber(properties.y);
+		inspector.inspectNumber(properties.z);
+		inspector.inspectNumber(properties.priority);
+		if (this.inspect !== undefined) {
+			inspector.header(`${this.constructor.name} Properties`);
+			this.inspect(inspector);
+		}
+	}
+
+	inspect?(inspector: Inspector): void;
 
 	get icon(): string {
 		return "cube-outline";

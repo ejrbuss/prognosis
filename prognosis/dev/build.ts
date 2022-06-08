@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import "./logging.js";
+import { walk } from "./walk.js";
 
 export async function build() {
 	await fs.mkdir("./dist/editor", { recursive: true });
@@ -12,14 +13,18 @@ export async function build() {
 	console.log(`Project rebuilt`);
 }
 
-type WalkResult = { files: string[]; directories: string[] };
-
 async function generateModules() {
-	const { files: projectFiles } = await walk("./project");
-	const { files: builtinFiles } = await walk("./prognosis/nodes");
-	const sourceFiles = [...projectFiles, ...builtinFiles].filter((file) =>
-		file.endsWith(".ts")
-	);
+	const sourceFiles: string[] = [];
+	for await (const fileStats of walk("./project")) {
+		if (fileStats.name.endsWith(".ts")) {
+			sourceFiles.push(fileStats.path);
+		}
+	}
+	for await (const fileStats of walk("./prognosis/nodes")) {
+		if (fileStats.path.endsWith(".ts")) {
+			sourceFiles.push(fileStats.path);
+		}
+	}
 	const distFiles = sourceFiles.map((file) =>
 		file.replace(/^\./, "").replace(/\.ts$/, ".js")
 	);
@@ -29,38 +34,21 @@ async function generateModules() {
 
 async function copyResources() {
 	await fs.mkdir(toDistPath("./resources"), { recursive: true });
-	const { files, directories } = await walk("./resources");
-	await Promise.all(directories.map((dir) => safeMkdir(toDistPath(dir))));
-	await Promise.all(files.map((file) => safeCopy(file)));
+	for await (const fileStats of walk("./resources")) {
+		if (fileStats.isDirectory()) {
+			safeMkdir(toDistPath(fileStats.path));
+		} else {
+			safeCopy(fileStats.path);
+		}
+	}
 }
 
 async function copyStyles() {
-	const { files } = await walk("./prognosis");
-	const styles = files.filter((file) => file.endsWith(".css"));
-	await Promise.all(styles.map((style) => safeCopy(style)));
-}
-
-async function walk(root: string): Promise<WalkResult> {
-	const result: WalkResult = { files: [], directories: [] };
-	const subWalks: Promise<WalkResult>[] = [];
-	for (const name of await fs.readdir(root)) {
-		if (name.endsWith(".DS_Store")) {
-			continue;
-		}
-		const subPath = `${root}/${name}`;
-		const subStats = await fs.stat(subPath);
-		if (subStats.isDirectory()) {
-			result.directories.push(subPath);
-			subWalks.push(walk(subPath));
-		} else {
-			result.files.push(subPath);
+	for await (const fileStats of walk("./prognosis")) {
+		if (fileStats.name.endsWith(".css")) {
+			safeCopy(fileStats.path);
 		}
 	}
-	for (const subResult of await Promise.all(subWalks)) {
-		result.files.push(...subResult.files);
-		result.directories.push(...subResult.directories);
-	}
-	return result;
 }
 
 async function safeMkdir(path: string) {

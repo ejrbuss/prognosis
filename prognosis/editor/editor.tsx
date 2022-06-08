@@ -1,89 +1,74 @@
-import { Node } from "../nodes/node.js";
+import {
+	EditorAction,
+	editorReducer,
+	GridConstants,
+	GridConstraints,
+	InitialEditorState,
+	loadEditorState,
+} from "./editorstate.js";
 import { Explorer } from "./explorer.js";
 import { Gutter } from "./gutter.js";
-import { usePersistentState } from "./hooks.js";
+import { useRerender } from "./hooks.js";
 import { Inspector } from "./inspector.js";
 import { Preview } from "./preview.js";
 import { Timeline } from "./timeline.js";
 import { Toolbar } from "./toolbar.js";
 
-const MinSize = 200;
-
-type GridConstraints = {
-	desiredInspectorWidth: number;
-	desiredExplorerWidth: number;
-	desiredTabsHeight: number;
-};
-
 export function Editor() {
-	const [gridConstraints, setGridConstraints] = usePersistentState(
-		"prognosis.editor.gridConstraints",
-		{
-			desiredInspectorWidth: 300,
-			desiredExplorerWidth: 300,
-			desiredTabsHeight: 300,
-		}
+	const rerender = useRerender();
+	const [editorState, dispatch] = React.useReducer(
+		editorReducer,
+		InitialEditorState
 	);
-	const [selectedNode, setSelectedNode] = React.useState<Node | undefined>();
-
 	React.useEffect(() => {
-		const listener = () => setGridConstraints({ ...gridConstraints });
+		const listener = () => rerender();
 		window.addEventListener("resize", listener);
 		return () => window.removeEventListener("resize", listener);
-	}, [gridConstraints]);
-
-	const resizeInspector = (delta: number) =>
-		setGridConstraints({
-			...gridConstraints,
-			desiredInspectorWidth: Math.max(
-				MinSize,
-				gridConstraints.desiredInspectorWidth - delta
-			),
-		});
-	const resizeExplorer = (delta: number) =>
-		setGridConstraints({
-			...gridConstraints,
-			desiredExplorerWidth: Math.max(
-				Explorer.minWidth,
-				gridConstraints.desiredExplorerWidth - delta
-			),
-		});
-	const resizeTabs = (delta: number) =>
-		setGridConstraints({
-			...gridConstraints,
-			desiredTabsHeight: Math.max(
-				MinSize,
-				gridConstraints.desiredTabsHeight - delta
-			),
-		});
-
-	const grid = gridSolver(gridConstraints);
+	});
+	const grid = gridSolver(editorState.gridConstraints);
 	return (
 		<div
 			className="editor"
 			style={{
 				gridTemplateColumns: [
 					`${grid.toolbarWidth}px`,
-					`${Gutter.size}px`,
+					`${GridConstants.GutterSize}px`,
 					`${grid.inspectorWidth}px`,
-					`${Gutter.size}px`,
+					`${GridConstants.GutterSize}px`,
 					`${grid.explorerWidth}px`,
 				].join(" "),
 				gridTemplateRows: [
-					`${Toolbar.height}px`,
+					`${GridConstants.ToolbarHeight}px`,
 					`${grid.previewHeight}px`,
-					`${Gutter.size}px`,
+					`${GridConstants.GutterSize}px`,
 					`${grid.tabsHeight}px`,
 				].join(" "),
 			}}
 		>
-			<Toolbar />
-			<Gutter vertical onDrag={resizeInspector} />
-			<Inspector selectedNode={selectedNode} />
-			<Gutter vertical onDrag={resizeExplorer} />
-			<Explorer selectedNode={selectedNode} setSelectedNode={setSelectedNode} />
+			<Toolbar
+				readOnly={editorState.readOnly}
+				scene={editorState.scene}
+				dispatch={dispatch}
+			/>
+			<Gutter
+				vertical
+				onDrag={(delta) => dispatch(EditorAction.resizeInspector(delta))}
+			/>
+			<Inspector
+				readOnly={editorState.readOnly}
+				selectedNode={editorState.selectedNode}
+				nodeInspector={editorState.inspector}
+			/>
+			<Gutter
+				vertical
+				onDrag={(delta) => dispatch(EditorAction.resizeExplorer(delta))}
+			/>
+			<Explorer selectedNode={editorState.selectedNode} dispatch={dispatch} />
 			<Preview />
-			<Gutter horizontal onDrag={resizeTabs} />
+			<Gutter
+				horizontal
+				onDrag={(delta) => dispatch(EditorAction.resizeTimeline(delta))}
+			/>
 			<Timeline />
 		</div>
 	);
@@ -93,36 +78,40 @@ function gridSolver(constraints: GridConstraints) {
 	const maxWidth = window.innerWidth;
 	const maxHeight = window.innerHeight;
 	const toolbarWidth = Math.max(
-		Toolbar.minWidth,
+		GridConstants.ToolBarMinWidth,
 		maxWidth -
 			(constraints.desiredInspectorWidth +
 				constraints.desiredExplorerWidth +
-				2 * Gutter.size)
+				2 * GridConstants.GutterSize)
 	);
 	const desiredWidth =
 		constraints.desiredInspectorWidth + constraints.desiredExplorerWidth;
 	const inspectorWidth = Math.max(
-		MinSize,
-		(maxWidth - (toolbarWidth + 2 * Gutter.size)) *
+		GridConstants.InspectorMinWidth,
+		(maxWidth - (toolbarWidth + 2 * GridConstants.GutterSize)) *
 			(constraints.desiredInspectorWidth / desiredWidth)
 	);
 	const explorerWidth = Math.max(
-		Explorer.minWidth,
-		maxWidth - (toolbarWidth + inspectorWidth + 2 * Gutter.size)
+		GridConstants.ExplorerMinWidth,
+		maxWidth - (toolbarWidth + inspectorWidth + 2 * GridConstants.GutterSize)
 	);
 	const previewHeight = Math.max(
-		MinSize,
-		maxHeight - (constraints.desiredTabsHeight + Gutter.size + Toolbar.height)
+		GridConstants.PreviewMinHeight,
+		maxHeight -
+			(constraints.desiredTimelineHeight +
+				GridConstants.GutterSize +
+				GridConstants.ToolbarHeight)
 	);
-	const tabsHeight = Math.max(
-		MinSize,
-		maxHeight - (previewHeight + Gutter.size + Toolbar.height)
+	const timelineHeight = Math.max(
+		GridConstants.TimelineMinHeight,
+		maxHeight -
+			(previewHeight + GridConstants.GutterSize + GridConstants.ToolbarHeight)
 	);
 	return {
 		toolbarWidth,
 		inspectorWidth,
 		explorerWidth,
 		previewHeight,
-		tabsHeight,
+		tabsHeight: timelineHeight,
 	};
 }

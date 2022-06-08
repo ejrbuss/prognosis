@@ -1,17 +1,23 @@
+import { SceneResource } from "../resources/sceneResource.js";
 import { Runtime } from "../runtime.js";
 import { classNames } from "./classnames.js";
+import { EditorAction } from "./editorstate.js";
 import { Icon } from "./icon.js";
 
 export enum Tool {
-	TranslationTool = "TranslationTool",
-	ScaleTool = "ScaleTool",
-	RotationTool = "RotationTool",
+	Translation = "Translation",
+	Scale = "Scale",
+	Rotation = "Rotation",
 }
 
-export type ToolbarProps = {};
+export type ToolbarProps = {
+	readOnly: boolean;
+	scene?: SceneResource;
+	dispatch: (action: EditorAction) => void;
+};
 
-export function Toolbar(props: ToolbarProps) {
-	const [tool, setTool] = React.useState(Tool.TranslationTool);
+export function Toolbar({ readOnly, scene, dispatch }: ToolbarProps) {
+	const [tool, setTool] = React.useState(Tool.Translation);
 	const [lockGrid, setLockGrid] = React.useState(false);
 	const [showGrid, setShowGrid] = React.useState(false);
 	const [playing, setPlaying] = React.useState(false);
@@ -19,6 +25,7 @@ export function Toolbar(props: ToolbarProps) {
 		Runtime.running = true;
 		Runtime.debug = false;
 		setPlaying(true);
+		dispatch(EditorAction.setReadOnly(true));
 	};
 	const stop = () => {
 		Runtime.running = false;
@@ -30,24 +37,24 @@ export function Toolbar(props: ToolbarProps) {
 			<Icon
 				button
 				large
-				selected={tool === Tool.TranslationTool}
-				onClick={() => setTool(Tool.TranslationTool)}
+				selected={tool === Tool.Translation}
+				onClick={() => setTool(Tool.Translation)}
 				title="Translation Tool"
 				icon="move-outline"
 			/>
 			<Icon
 				button
 				large
-				selected={tool === Tool.ScaleTool}
-				onClick={() => setTool(Tool.ScaleTool)}
+				selected={tool === Tool.Scale}
+				onClick={() => setTool(Tool.Scale)}
 				title="Scale Tool"
 				icon="resize-outline"
 			/>
 			<Icon
 				button
 				large
-				selected={tool === Tool.RotationTool}
-				onClick={() => setTool(Tool.RotationTool)}
+				selected={tool === Tool.Rotation}
+				onClick={() => setTool(Tool.Rotation)}
 				title="Rotation Tool"
 				icon="refresh-outline"
 			/>
@@ -75,7 +82,7 @@ export function Toolbar(props: ToolbarProps) {
 			<Icon
 				button
 				large
-				disabled={playing}
+				disabled={scene === undefined || playing}
 				onClick={play}
 				title="Play"
 				icon="play-outline"
@@ -83,7 +90,7 @@ export function Toolbar(props: ToolbarProps) {
 			<Icon
 				button
 				large
-				disabled={!playing}
+				disabled={scene === undefined || !playing}
 				onClick={stop}
 				title="Stop"
 				icon="stop-outline"
@@ -91,13 +98,13 @@ export function Toolbar(props: ToolbarProps) {
 			<Icon
 				button
 				large
-				disabled={true}
+				disabled={scene === undefined || !readOnly}
+				onClick={() => {
+					dispatch(EditorAction.loadScene(scene as SceneResource));
+				}}
 				title="Reset"
 				icon="play-skip-back-outline"
 			/>
 		</div>
 	);
 }
-
-Toolbar.height = 48;
-Toolbar.minWidth = 416;

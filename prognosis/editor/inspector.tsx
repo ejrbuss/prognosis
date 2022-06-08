@@ -1,31 +1,37 @@
+import { Inspector as NodeInspector } from "../inspector.js";
 import { Node } from "../nodes/node.js";
 import { Empty } from "./empty.js";
+import { useRerender } from "./hooks.js";
 import { Icon } from "./icon.js";
 
 export type InspectorProps = {
+	readOnly: boolean;
 	selectedNode?: Node;
+	nodeInspector?: NodeInspector;
 };
 
-export function Inspector({ selectedNode }: InspectorProps) {
+export function Inspector({
+	readOnly,
+	selectedNode,
+	nodeInspector,
+}: InspectorProps) {
+	const rerender = useRerender();
+	React.useEffect(() => {
+		const interval = setInterval(rerender, 100);
+		return () => clearInterval(interval);
+	}, []);
 	return (
 		<div className="inspector" style={{ gridRow: "span 4" }}>
 			<h1>INSPSECTOR</h1>
-			{selectedNode ? (
+			{selectedNode && nodeInspector ? (
 				<React.Fragment>
 					<div className="row">
-						<Icon className="node-icon" large icon={selectedNode.icon} />
-						<input className="node-name" defaultValue={selectedNode.name} />
+						<Icon className="node-icon" large button icon={selectedNode.icon} />
+						<input className="node-name" value={selectedNode.name} />
 					</div>
-					<h2>Properties</h2>
-					<div className="row">
-						<div className="prop-name">Type</div>
-						<input
-							readOnly
-							className="prop-value with-icon"
-							value={selectedNode.constructor.name}
-						/>
-						<Icon className="input-icon" large icon="document-text-outline" />
-					</div>
+					{nodeInspector.components.map((Component, index) => (
+						<Component readOnly={readOnly} key={index} />
+					))}
 				</React.Fragment>
 			) : (
 				<Empty icon="eye-outline" text="Select a Node from the explorer" />

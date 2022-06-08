@@ -5,7 +5,7 @@ import { Project } from "./project.js";
 import { Node, NodeTypes } from "./nodes/node.js";
 import { Resources } from "./resources/resources.js";
 import { Runtime } from "./runtime.js";
-import { NodeTreeResource } from "./resources/nodeTreeResource.js";
+import { SceneResource } from "./resources/sceneResource.js";
 
 // Load dynamic modules
 
@@ -26,5 +26,11 @@ await Promise.all(
 
 // Start runtime
 
-Runtime.root = (await Resources.load(NodeTreeResource, Project.root)).node;
+Runtime.root = (await Resources.load(SceneResource, Project.root)).buildRoot();
 Runtime.start();
+
+// Expose Prognosis
+
+(window as any).Prognosis = {
+	Runtime,
+};

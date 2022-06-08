@@ -1,3 +1,8 @@
+.explorer {
+	display: flex;
+	flex-flow: column;
+}
+
 .explorer .tools {
 	display: flex;
 	flex-flow: row;

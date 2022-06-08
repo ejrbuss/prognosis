@@ -62,6 +62,10 @@ input:focus {
 	background-color: var(--background-lighter-2);
 }
 
+input:read-only {
+	color: var(--color-subtle);
+}
+
 input:read-only:focus {
 	outline: none;
 	background-color: var(--background-lighter-1);

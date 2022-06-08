@@ -1,5 +1,5 @@
 {
-	"root": "Surface",
+	"root": 0,
 	"nodes": [
 		{
 			"name": "Surface",

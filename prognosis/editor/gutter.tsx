@@ -27,6 +27,7 @@ export function Gutter({ horizontal, vertical, onDrag }: GutterProps) {
 	});
 	return (
 		<div
+			tabIndex={0}
 			className={classNames("gutter", {
 				horizontal,
 				vertical,
@@ -37,5 +38,3 @@ export function Gutter({ horizontal, vertical, onDrag }: GutterProps) {
 		</div>
 	);
 }
-
-Gutter.size = 1;
