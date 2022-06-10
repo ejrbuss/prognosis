@@ -1,4 +1,5 @@
 import { Color } from "../data/color.js";
+import { Inspector, propertiesOf } from "../inspector.js";
 import { Node } from "./node.js";
 
 export class Rectangle extends Node {
@@ -15,6 +16,14 @@ export class Rectangle extends Node {
 		const h = this.height;
 		context.fillRect(-w / 2, -h / 2, w, h);
 		context.restore();
+	}
+
+	inspect(inspector: Inspector) {
+		const properties = propertiesOf(this);
+		inspector.inspectNumber(properties.rotation);
+		inspector.inspectNumber(properties.width);
+		inspector.inspectNumber(properties.height);
+		inspector.inspectColor(properties.color);
 	}
 
 	get icon(): string {

@@ -11,6 +11,7 @@ export type IconProps = {
 	className?: string;
 	onClick?: React.MouseEventHandler<HTMLDivElement>;
 	title?: string;
+	style?: React.CSSProperties;
 };
 
 export function Icon({
@@ -24,11 +25,13 @@ export function Icon({
 	className,
 	onClick,
 	title,
+	style,
 }: IconProps) {
 	return (
 		<div
 			title={title}
 			onClick={onClick}
+			style={style}
 			className={classNames("icon", icon, className, {
 				button,
 				selected,
@@ -38,7 +41,7 @@ export function Icon({
 				large,
 			})}
 		>
-			<ion-icon name={icon} />
+			{icon && <ion-icon name={icon} />}
 		</div>
 	);
 }

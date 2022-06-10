@@ -4,11 +4,9 @@ import { Easing } from "./easing.js";
 import { Point } from "./data/point.js";
 import { JsonData } from "./data/store.js";
 import { Schema } from "./data/schema.js";
-import { Runtime } from "./runtime.js";
 import { useRerender } from "./editor/hooks.js";
 import { Icon } from "./editor/icon.js";
 import { classNames } from "./editor/classnames.js";
-import { Fragment } from "react";
 
 class Property<Type> {
 	constructor(
@@ -38,11 +36,6 @@ interface Storeable {
 	toJson(): JsonData;
 	fromJson(json: JsonData): void;
 }
-
-const PointSchema = Schema.object({
-	x: Schema.number,
-	y: Schema.number,
-});
 
 export class Inspector {
 	readonly storeables: Record<string, Storeable> = {};
@@ -177,7 +170,7 @@ export class Inspector {
 									}}
 								/>
 								<input
-									hidden
+									className="hidden"
 									ref={colorRef}
 									type="color"
 									value={property.get().hex.substring(0, 7)}

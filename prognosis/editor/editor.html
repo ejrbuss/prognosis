@@ -25,15 +25,9 @@
 		// Force main to load late
 		await import("/prognosis/main.js");
 
-		// Stop the Runtime and clear the root
-		import { Runtime } from "/prognosis/runtime.js";
-		Runtime.root = undefined;
-		Runtime.running = false;
-		Runtime.debug = true;
-
-		// Load editor state from store
-		import { _loadSceneFromStore } from "/prognosis/editor/editorstate.js";
-		_loadSceneFromStore();
+		// Start the editor State
+		import { startEditorState } from "/prognosis/editor/editorstate.js";
+		startEditorState();
 
 	</script>
 </body>

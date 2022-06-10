@@ -1,6 +1,17 @@
 import { Point } from "../data/point.js";
 import { Inspector, propertiesOf } from "../inspector.js";
 
+const CountPattern = /(.* )\((\d+)\)$/;
+
+function incrementName(name: string): string {
+	const match = name.match(CountPattern);
+	if (match === null) {
+		return `${name} (1)`;
+	}
+	const count = parseInt(match[2]);
+	return `${match[1]} (${count + 1})`;
+}
+
 export class Node {
 	#name: string;
 	#started: boolean = false;
@@ -11,7 +22,7 @@ export class Node {
 	z: number = 0;
 	priority: number = 0;
 
-	constructor(name: string) {
+	constructor(name?: string) {
 		this.#name = name ?? this.constructor.name;
 	}
 
@@ -20,12 +31,12 @@ export class Node {
 	}
 
 	set name(name: string) {
-		if (
+		while (
 			this.#parent?.children.some(
-				(childNode) => childNode !== this && childNode.name === name
+				(child) => child !== this && child.name === name
 			)
 		) {
-			throw new Error("TODO fix name");
+			name = incrementName(name);
 		}
 		this.#name = name;
 	}
@@ -36,6 +47,10 @@ export class Node {
 
 	get started(): boolean {
 		return this.#started;
+	}
+
+	get parent(): Node | undefined {
+		return this.#parent;
 	}
 
 	get children(): Readonly<Node[]> {
@@ -82,7 +97,7 @@ export class Node {
 			throw new Error(`Invalid  Node path "${path}"!`);
 		}
 		const name = path.substring(0, seperator);
-		const child = this.children.find((child) => child.name === name);
+		const child = this.#children.find((child) => child.name === name);
 		if (path.length === name.length + 1) {
 			return child;
 		}
@@ -90,16 +105,14 @@ export class Node {
 	}
 
 	add(node: Node) {
-		if (this.children.some((child) => child.name === node.name)) {
-			throw Error(
-				`Cannot add Node "${node.name}" to ${this.name}, child with the same name already exists!`
-			);
-		}
 		if (node.#parent === this) {
 			return;
 		}
 		if (node.#parent !== undefined) {
 			node.#parent.remove(node);
+		}
+		while (this.#children.some((child) => child.name === node.name)) {
+			node.name = incrementName(node.name);
 		}
 		node.#parent = this;
 		this.#children.push(node);
@@ -124,31 +137,36 @@ export class Node {
 		return false;
 	}
 
+	removeAll() {
+		this.#children.forEach((child) => this.remove(child));
+	}
+
 	has(nodeType: typeof Node): boolean {
-		return this.#children.some((node) => node instanceof nodeType);
+		return this.#children.some((child) => child instanceof nodeType);
 	}
 
 	get<NodeType extends typeof Node>(
 		nodeType: NodeType
 	): InstanceType<NodeType> | undefined {
 		return this.#children.find(
-			(node) => node instanceof nodeType
+			(child) => child instanceof nodeType
 		) as InstanceType<NodeType>;
 	}
 
 	clone(): this {
 		const clone: this = new (this.constructor as any)(this.name);
-		// TODO do copy via inspector
-		// Copy base Node prioerties
-		clone.localX = this.localX;
-		clone.localY = this.localY;
-		clone.priority = this.priority;
-		clone.z = this.z;
+		const thisInspector = new Inspector();
+		this._inspect(thisInspector);
+		const cloneInspector = new Inspector();
+		clone._inspect(cloneInspector);
+		cloneInspector.fromJson(thisInspector.toJson());
 		this.#children.forEach((child) => {
 			clone.add(child.clone());
 		});
 		return clone;
 	}
+
+	// Lifecycle methods
 
 	_start() {
 		if (this.#started) {
@@ -201,40 +219,14 @@ export class Node {
 		context.translate(-this.localX, -this.localY);
 	}
 
-	_debugRender(context: CanvasRenderingContext2D) {
-		const preRender: Node[] = [];
-		const postRender: Node[] = [];
-		this.#children.forEach((child) => {
-			if (child.z < 0) {
-				preRender.push(child);
-			} else {
-				postRender.push(child);
-			}
-		});
-		preRender.sort((a, b) => a.z - b.z);
-		postRender.sort((a, b) => a.z - b.z);
-		context.translate(this.localX, this.localY);
-		preRender.forEach((child) => child._debugRender(context));
-		this.debugRender(context);
-		postRender.forEach((child) => child._debugRender(context));
-		context.translate(-this.localX, -this.localY);
-	}
-
-	debugRender(context: CanvasRenderingContext2D) {
-		if (this.render !== undefined) {
-			this.render(context);
-		}
-	}
-
 	// Runtime hooks
 
-	start?(): void;
 	childrenChanged?(): void;
+	start?(): void;
 	update?(): void;
-	physicsUpdate?(): void;
 	render?(context: CanvasRenderingContext2D): void;
 
-	// Editor hooks
+	// Debug lifecycle methods
 
 	_inspect(inspector: Inspector) {
 		const properties = propertiesOf(this);
@@ -249,11 +241,57 @@ export class Node {
 		}
 	}
 
-	inspect?(inspector: Inspector): void;
+	_debugUpdate() {
+		const preUpdate: Node[] = [];
+		const postUpdate: Node[] = [];
+		this.#children.forEach((child) => {
+			if (child.priority > this.priority) {
+				preUpdate.push(child);
+			} else {
+				postUpdate.push(child);
+			}
+		});
+		preUpdate.sort((a, b) => b.priority - a.priority);
+		postUpdate.sort((a, b) => b.priority - a.priority);
+		preUpdate.forEach((child) => child._update());
+		if (this.debugUpdate !== undefined) {
+			this.debugUpdate();
+		}
+		postUpdate.forEach((child) => child._update());
+	}
+
+	_debugRender(context: CanvasRenderingContext2D) {
+		const preRender: Node[] = [];
+		const postRender: Node[] = [];
+		this.#children.forEach((child) => {
+			if (child.z < 0) {
+				preRender.push(child);
+			} else {
+				postRender.push(child);
+			}
+		});
+		preRender.sort((a, b) => a.z - b.z);
+		postRender.sort((a, b) => a.z - b.z);
+		context.translate(this.localX, this.localY);
+		preRender.forEach((child) => child._debugRender(context));
+		if (this.debugRender !== undefined) {
+			this.debugRender(context);
+		} else if (this.render !== undefined) {
+			this.render(context);
+		}
+		postRender.forEach((child) => child._debugRender(context));
+		context.translate(-this.localX, -this.localY);
+	}
 
 	get icon(): string {
 		return "cube-outline";
 	}
+
+	// Editor hooks
+
+	inspect?(inspector: Inspector): void;
+	debugUpdate?(): void;
+	debugRender?(context: CanvasRenderingContext2D): void;
 }
 
 export const NodeTypes: Record<string, typeof Node> = {};

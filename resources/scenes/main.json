@@ -4,7 +4,7 @@
 		{
 			"name": "Surface",
 			"type": "Surface",
-			"props": {},
+			"properties": {},
 			"children": []
 		}
 	]

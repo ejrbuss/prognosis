@@ -1,10 +1,14 @@
+import { Color } from "../data/color.js";
 import { Store } from "../data/store.js";
 import { Inspector } from "../inspector.js";
+import { Grid } from "../nodes/grid.js";
 import { Node } from "../nodes/node.js";
+import { Project } from "../project.js";
 import { Resources } from "../resources/resources.js";
 import { SceneResource } from "../resources/sceneResource.js";
 import { Runtime } from "../runtime.js";
 import { Signal } from "../signal.js";
+import { EditorRoot } from "./editorroot.js";
 
 export function useEditorState() {
 	const [_, forceUpdate] = React.useState({});
@@ -17,49 +21,65 @@ export function useEditorState() {
 	return editorState;
 }
 
-export const GridConstants = {
+export const LayoutConstants = {
 	GutterSize: 1,
 	ToolbarHeight: 48,
-	ToolBarMinWidth: 416,
-	InspectorMinWidth: 200,
-	ExplorerMinWidth: 200,
+	ToolBarMinWidth: 400,
+	InspectorMinWidth: 225,
+	ExplorerMinWidth: 300,
 	PreviewMinHeight: 200,
 	TimelineMinHeight: 200,
 };
 
-export type GridConstraints = {
+export type LayoutConstraints = {
 	desiredInspectorWidth: number;
 	desiredExplorerWidth: number;
 	desiredTimelineHeight: number;
 };
 
 type EditorStore = Store<{
-	gridConstraints: GridConstraints;
+	layoutConstraints: LayoutConstraints;
 	sceneUrl?: string;
 	selectedNodePath?: string;
 	nodeExpansions: Partial<Record<string, boolean>>;
+	gridSize: number;
 }>;
 
-export function _loadSceneFromStore() {
-	editorState._loadSceneFromStore();
+export function startEditorState() {
+	editorState.start();
 }
 
 export class EditorState {
-	#store: EditorStore = new Store("editor.store", {
-		gridConstraints: {
+	#store: EditorStore = new Store("prognosis.editor.store", {
+		layoutConstraints: {
 			desiredInspectorWidth: 300,
 			desiredExplorerWidth: 300,
 			desiredTimelineHeight: 300,
 		},
 		nodeExpansions: {},
+		gridSize: 100,
 	});
+	#editorRoot: EditorRoot = new EditorRoot();
 	#scene?: SceneResource;
 	#selectedNode?: Node;
 	#inspector?: Inspector;
+	#running: boolean = false;
 	#readOnly: boolean = false;
 
-	get gridConstraints(): GridConstraints {
-		return this.#store.value.gridConstraints;
+	get layoutContraints(): LayoutConstraints {
+		return this.#store.value.layoutConstraints;
+	}
+
+	get gridSize(): number {
+		return this.#store.value.gridSize;
+	}
+
+	get showGrid(): boolean {
+		return this.#editorRoot.showGrid;
+	}
+
+	get editorRoot(): Node {
+		return this.#editorRoot;
 	}
 
 	get scene(): SceneResource | undefined {
@@ -74,6 +94,10 @@ export class EditorState {
 		return this.#inspector;
 	}
 
+	get running(): boolean {
+		return this.#running;
+	}
+
 	get readOnly(): boolean {
 		return this.#readOnly;
 	}
@@ -82,7 +106,11 @@ export class EditorState {
 		return this.#store.value.nodeExpansions[node.path] === true;
 	}
 
-	async _loadSceneFromStore() {
+	async start() {
+		Runtime.root.removeAll();
+		Runtime.root.add(this.#editorRoot);
+		this.#editorRoot.cameraSpeed = Project.graphics.width / 3;
+		this.#editorRoot.gridSize = this.#store.value.gridSize;
 		const sceneUrl = this.#store.value.sceneUrl;
 		if (sceneUrl !== undefined) {
 			this.#scene = await Resources.load(SceneResource, sceneUrl);
@@ -91,10 +119,13 @@ export class EditorState {
 	}
 
 	resetScene() {
-		(Runtime.root as any) = this.#scene?.buildRoot();
+		this.#editorRoot.removeAll();
+		if (this.#scene !== undefined) {
+			this.#editorRoot?.add(this.#scene.toNode());
+		}
 		const selectedNodePath = this.#store.value.selectedNodePath;
-		if (Runtime.root !== undefined && selectedNodePath !== undefined) {
-			this.#selectedNode = Runtime.find(selectedNodePath);
+		if (selectedNodePath !== undefined) {
+			this.#selectedNode = this.#editorRoot.find(selectedNodePath);
 			this.#inspector = new Inspector();
 			this.#selectedNode?._inspect(this.#inspector);
 		} else {
@@ -126,14 +157,6 @@ export class EditorState {
 		stateChanges.send();
 	}
 
-	makeReadonly() {
-		if (this.#readOnly) {
-			return;
-		}
-		this.#readOnly = true;
-		stateChanges.send();
-	}
-
 	toggleNodeExpansion(node: Node) {
 		const expanded = this.nodeExpanded(node);
 		this.#store.value.nodeExpansions[node.path] = !expanded;
@@ -145,7 +168,10 @@ export class EditorState {
 		if (delta === 0) {
 			return;
 		}
-		this.#store.value.gridConstraints.desiredInspectorWidth -= delta;
+		this.#store.value.layoutConstraints.desiredInspectorWidth = Math.max(
+			LayoutConstants.InspectorMinWidth,
+			this.layoutContraints.desiredInspectorWidth - delta
+		);
 		this.#store.save();
 		stateChanges.send();
 	}
@@ -154,7 +180,10 @@ export class EditorState {
 		if (delta === 0) {
 			return;
 		}
-		this.#store.value.gridConstraints.desiredExplorerWidth -= delta;
+		this.#store.value.layoutConstraints.desiredExplorerWidth = Math.max(
+			LayoutConstants.ExplorerMinWidth,
+			this.layoutContraints.desiredExplorerWidth - delta
+		);
 		this.#store.save();
 		stateChanges.send();
 	}
@@ -163,8 +192,42 @@ export class EditorState {
 		if (delta === 0) {
 			return;
 		}
-		this.#store.value.gridConstraints.desiredTimelineHeight -= delta;
+		this.#store.value.layoutConstraints.desiredTimelineHeight = Math.max(
+			LayoutConstants.TimelineMinHeight,
+			this.layoutContraints.desiredTimelineHeight - delta
+		);
 		this.#store.save();
+		stateChanges.send();
+	}
+
+	resizeGrid(newGridSize: number) {
+		this.#editorRoot.gridSize = newGridSize;
+		this.#store.value.gridSize = newGridSize;
+		this.#store.save();
+		stateChanges.send();
+	}
+
+	toggleGrid() {
+		this.#editorRoot.showGrid = !this.#editorRoot.showGrid;
+		stateChanges.send();
+	}
+
+	play() {
+		this.#readOnly = true;
+		this.#running = true;
+		Runtime.root.remove(this.#editorRoot);
+		this.#editorRoot.children.forEach((childNode) => {
+			Runtime.root.add(childNode);
+		});
+		stateChanges.send();
+	}
+
+	stop() {
+		this.#running = false;
+		Runtime.root.children.forEach((childNode) => {
+			this.#editorRoot.add(childNode);
+		});
+		Runtime.root.add(this.#editorRoot);
 		stateChanges.send();
 	}
 }

@@ -17,7 +17,10 @@ await Promise.all(
 		const exportedValues = await import(modulePath);
 		Object.values(exportedValues).forEach((value) => {
 			// Register NodeTypes
-			if (typeof value === "function" && value.prototype instanceof Node) {
+			if (
+				typeof value === "function" &&
+				(Node.isPrototypeOf(value) || value === Node)
+			) {
 				NodeTypes[value.name] = value as typeof Node;
 				NodeTypeSourceLocation[value.name] = modulePath;
 			}
@@ -27,7 +30,7 @@ await Promise.all(
 
 // Start runtime
 
-Runtime.root = (await Resources.load(SceneResource, Project.root)).buildRoot();
+Runtime.root.add((await Resources.load(SceneResource, Project.root)).toNode());
 Runtime.start();
 
 // Expose Prognosis

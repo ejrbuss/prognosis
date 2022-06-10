@@ -1,7 +1,21 @@
 :root {
+	--font-size-sm: 12px;
+	--font-size-md: 16px;
+	--font-size-lg: 24px;
+	--font-family: -apple-system, system-ui, sans-serif;
+	--color-accent: rgb(233, 86, 120);
+	--color-fg: rgb(200, 200, 200);
+	--color-fg-subtle: rgb(121, 123, 138);
+	--color-bg: rgb(34, 35, 46);
+	--color-bg-darker: rgb(22, 22, 28);
+	--color-bg-lighter-1: rgb(42, 43, 57);
+	--color-bg-lighter-2: rgb(52, 55, 72);
+	--gap-sm: 2px;
+	--gap-md: 4px;
+	--gap-lg: 12px;
+
 	--color: rgb(200, 200, 200);
 	--color-subtle: rgb(121, 123, 138);
-	--font-family: -apple-system, system-ui, sans-serif;
 	--background: rgb(34, 35, 46);
 	--background-darker: rgb(22, 22, 28);
 	--background-lighter-1: rgb(42, 43, 57);

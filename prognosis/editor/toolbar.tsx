@@ -1,4 +1,3 @@
-import { Runtime } from "../runtime.js";
 import { classNames } from "./classnames.js";
 import { EditorState } from "./editorstate.js";
 import { Icon } from "./icon.js";
@@ -16,19 +15,6 @@ export type ToolbarProps = {
 export function Toolbar({ editorState }: ToolbarProps) {
 	const [tool, setTool] = React.useState(Tool.Translation);
 	const [lockGrid, setLockGrid] = React.useState(false);
-	const [showGrid, setShowGrid] = React.useState(false);
-	const [playing, setPlaying] = React.useState(false);
-	const play = () => {
-		Runtime.running = true;
-		Runtime.debug = false;
-		setPlaying(true);
-		editorState.makeReadonly();
-	};
-	const stop = () => {
-		Runtime.running = false;
-		Runtime.debug = true;
-		setPlaying(false);
-	};
 	return (
 		<div className="toolbar">
 			<Icon
@@ -67,35 +53,40 @@ export function Toolbar({ editorState }: ToolbarProps) {
 			<Icon
 				button
 				large
-				selected={showGrid}
-				className={classNames({ selected: showGrid })}
-				onClick={() => setShowGrid(!showGrid)}
+				selected={editorState.showGrid}
+				onClick={() => editorState.toggleGrid()}
 				title="Show Grid"
 				icon="grid-outline"
 			/>
-			<input className="grid-size" type="number" min={0} />
+			<input
+				className="grid-size"
+				type="number"
+				min={0}
+				value={editorState.gridSize}
+				onChange={(event) => editorState.resizeGrid(event.target.valueAsNumber)}
+			/>
 			<span className="unit">px</span>
 			<div className="spacer" />
 			<Icon
 				button
 				large
-				disabled={editorState.scene === undefined || playing}
-				onClick={play}
+				disabled={editorState.running}
+				onClick={() => editorState.play()}
 				title="Play"
 				icon="play-outline"
 			/>
 			<Icon
 				button
 				large
-				disabled={editorState.scene === undefined || !playing}
-				onClick={stop}
+				disabled={!editorState.running}
+				onClick={() => editorState.stop()}
 				title="Stop"
 				icon="stop-outline"
 			/>
 			<Icon
 				button
 				large
-				disabled={editorState.scene === undefined || !editorState.readOnly}
+				disabled={!editorState.readOnly}
 				onClick={() => editorState.resetScene()}
 				title="Reset"
 				icon="play-skip-back-outline"

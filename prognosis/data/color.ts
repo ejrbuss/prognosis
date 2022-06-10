@@ -54,7 +54,7 @@ export class Color implements Tweenable<Color> {
 	static Yellow = Color.cmyk(0, 0, 1, 0);
 
 	static rgb255(red: number, green: number, blue: number): Color {
-		return Color.rgba255(red, green, blue, 255);
+		return Color.rgba255(red, green, blue, 1);
 	}
 
 	static rgba255(
@@ -67,7 +67,7 @@ export class Color implements Tweenable<Color> {
 			(Math.clamp(red, 0, 255) << 0x18) +
 				(Math.clamp(green, 0, 255) << 0x10) +
 				(Math.clamp(blue, 0, 255) << 0x8) +
-				Math.clamp(alpha, 0, 255)
+				Math.round(Math.clamp(alpha, 0, 1) * 255)
 		);
 	}
 

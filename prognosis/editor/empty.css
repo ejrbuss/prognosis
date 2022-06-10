@@ -2,11 +2,10 @@
 	flex-grow: 1;
 	padding: 32px;
 	display: flex;
-	justify-content: center;
 	flex-flow: column;
+	justify-content: center;
 	align-items: center;
-	font-family: var(--font-family);
-	font-size: 12px;
+	font-size: var(--font-size-sm);
 	color: var(--color-subtle);
 	text-align: center;
 	user-select: none;

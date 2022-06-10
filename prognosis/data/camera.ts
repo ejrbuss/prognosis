@@ -1,20 +1,25 @@
 import { Point } from "./point.js";
 
 export type CameraProps = {
+	x: number;
+	y: number;
 	position: Point;
 	zoom: number;
 	rotation: number;
 };
 
 export class Camera {
-	position: Point;
-	zoom: number;
-	rotation: number;
+	position: Point = Point.Origin;
+	zoom: number = 1;
+	rotation: number = 0;
 
-	constructor(props?: Partial<CameraProps>) {
-		this.position = props?.position ?? Point.Origin;
-		this.zoom = props?.zoom ?? 1;
-		this.rotation = props?.rotation ?? 0;
+	with(props: Partial<CameraProps>): Camera {
+		const camera = new Camera();
+		camera.x = props.x ?? props.position?.x ?? this.x;
+		camera.y = props.y ?? props.position?.y ?? this.y;
+		camera.zoom = props.zoom ?? this.zoom;
+		camera.rotation = props.rotation ?? this.rotation;
+		return camera;
 	}
 
 	get x(): number {

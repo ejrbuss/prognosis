@@ -1,6 +1,6 @@
 import {
-	GridConstants,
-	GridConstraints,
+	LayoutConstants,
+	LayoutConstraints,
 	useEditorState,
 } from "./editorstate.js";
 import { Explorer } from "./explorer.js";
@@ -19,23 +19,23 @@ export function Editor() {
 		window.addEventListener("resize", listener);
 		return () => window.removeEventListener("resize", listener);
 	});
-	const grid = gridSolver(editorState.gridConstraints);
+	const layout = layoutSolver(editorState.layoutContraints);
 	return (
 		<div
 			className="editor"
 			style={{
 				gridTemplateColumns: [
-					`${grid.toolbarWidth}px`,
-					`${GridConstants.GutterSize}px`,
-					`${grid.inspectorWidth}px`,
-					`${GridConstants.GutterSize}px`,
-					`${grid.explorerWidth}px`,
+					`${layout.toolbarWidth}px`,
+					`${LayoutConstants.GutterSize}px`,
+					`${layout.inspectorWidth}px`,
+					`${LayoutConstants.GutterSize}px`,
+					`${layout.explorerWidth}px`,
 				].join(" "),
 				gridTemplateRows: [
-					`${GridConstants.ToolbarHeight}px`,
-					`${grid.previewHeight}px`,
-					`${GridConstants.GutterSize}px`,
-					`${grid.tabsHeight}px`,
+					`${LayoutConstants.ToolbarHeight}px`,
+					`${layout.previewHeight}px`,
+					`${LayoutConstants.GutterSize}px`,
+					`${layout.tabsHeight}px`,
 				].join(" "),
 			}}
 		>
@@ -54,38 +54,40 @@ export function Editor() {
 	);
 }
 
-function gridSolver(constraints: GridConstraints) {
+function layoutSolver(constraints: LayoutConstraints) {
 	const maxWidth = window.innerWidth;
 	const maxHeight = window.innerHeight;
 	const toolbarWidth = Math.max(
-		GridConstants.ToolBarMinWidth,
+		LayoutConstants.ToolBarMinWidth,
 		maxWidth -
 			(constraints.desiredInspectorWidth +
 				constraints.desiredExplorerWidth +
-				2 * GridConstants.GutterSize)
+				2 * LayoutConstants.GutterSize)
 	);
 	const desiredWidth =
 		constraints.desiredInspectorWidth + constraints.desiredExplorerWidth;
 	const inspectorWidth = Math.max(
-		GridConstants.InspectorMinWidth,
-		(maxWidth - (toolbarWidth + 2 * GridConstants.GutterSize)) *
+		LayoutConstants.InspectorMinWidth,
+		(maxWidth - (toolbarWidth + 2 * LayoutConstants.GutterSize)) *
 			(constraints.desiredInspectorWidth / desiredWidth)
 	);
 	const explorerWidth = Math.max(
-		GridConstants.ExplorerMinWidth,
-		maxWidth - (toolbarWidth + inspectorWidth + 2 * GridConstants.GutterSize)
+		LayoutConstants.ExplorerMinWidth,
+		maxWidth - (toolbarWidth + inspectorWidth + 2 * LayoutConstants.GutterSize)
 	);
 	const previewHeight = Math.max(
-		GridConstants.PreviewMinHeight,
+		LayoutConstants.PreviewMinHeight,
 		maxHeight -
 			(constraints.desiredTimelineHeight +
-				GridConstants.GutterSize +
-				GridConstants.ToolbarHeight)
+				LayoutConstants.GutterSize +
+				LayoutConstants.ToolbarHeight)
 	);
 	const timelineHeight = Math.max(
-		GridConstants.TimelineMinHeight,
+		LayoutConstants.TimelineMinHeight,
 		maxHeight -
-			(previewHeight + GridConstants.GutterSize + GridConstants.ToolbarHeight)
+			(previewHeight +
+				LayoutConstants.GutterSize +
+				LayoutConstants.ToolbarHeight)
 	);
 	return {
 		toolbarWidth,

@@ -11,7 +11,8 @@ export type InspectorProps = {
 
 export function Inspector({ editorState }: InspectorProps) {
 	useInterval(100);
-	const rerender = useRerender();
+	const [nodeName, setNodeName] = React.useState("");
+	const [focus, setFocus] = React.useState(false);
 	const node = editorState.selectedNode;
 	const inspector = editorState.inspector;
 	return (
@@ -33,10 +34,15 @@ export function Inspector({ editorState }: InspectorProps) {
 						/>
 						<input
 							className="node-name"
-							value={node.name}
-							onChange={(event) => {
-								node.name = event.target.value;
-								rerender();
+							value={focus ? nodeName : node.name}
+							onChange={(event) => setNodeName(event.target.value)}
+							onFocus={() => {
+								setNodeName(node.name);
+								setFocus(true);
+							}}
+							onBlur={() => {
+								node.name = nodeName;
+								setFocus(false);
 							}}
 						/>
 					</div>
