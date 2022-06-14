@@ -1,18 +1,3 @@
-import { Resources } from "../prognosis/resources/resources.js";
-import { Color } from "../prognosis/data/color.js";
-import { Animation } from "../prognosis/nodes/animation.js";
-import { Rectangle } from "../prognosis/nodes/rectangle.js";
-import { Sprite } from "../prognosis/nodes/sprite.js";
-import { Surface } from "../prognosis/nodes/surface.js";
-import { Text } from "../prognosis/nodes/text.js";
-import { Node } from "../prognosis/nodes/node.js";
-import { Key, Keyboard } from "../prognosis/keyboard.js";
-import { Point } from "../prognosis/data/point.js";
-import { Project } from "../prognosis/project.js";
-import { Random } from "../prognosis/random.js";
-import { Runtime } from "../prognosis/runtime.js";
-import { SpriteSheetResource } from "../prognosis/resources/spriteSheetResource.js";
-
 // Runtime.updates.next.then(async () => {
 // 	const maxWidth = Project.graphics.width;
 // 	const maxHeight = Project.graphics.height;
