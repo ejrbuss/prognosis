@@ -1,11 +1,14 @@
-import { Resource } from "./resources.js";
+import { Resources } from "./resources.js";
 
-export class AudioResource implements Resource {
-	audioElement!: HTMLAudioElement;
-
-	async load(url: string): Promise<void> {
-		this.audioElement = new Audio();
-		this.audioElement.src = url;
-		await new Promise((resolve) => (this.audioElement.onload = resolve));
+export class AudioResource {
+	static load(url: string): Promise<AudioResource> {
+		return Resources.load(url, async () => {
+			const audioElement = new Audio();
+			audioElement.src = url;
+			await new Promise((resolve) => (audioElement.onload = resolve));
+			return new AudioResource(audioElement);
+		});
 	}
+
+	constructor(readonly audioElement: HTMLAudioElement) {}
 }

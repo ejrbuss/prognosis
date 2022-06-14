@@ -1,60 +1,47 @@
-import { classNames } from "./classnames.js";
-import { EditorState } from "./editorstate.js";
+import { EditorState, RuntimeState, Tool } from "./editorState.js";
 import { Icon } from "./icon.js";
 
-export enum Tool {
-	Translation = "Translation",
-	Scale = "Scale",
-	Rotation = "Rotation",
-}
-
-export type ToolbarProps = {
-	editorState: EditorState;
-};
-
-export function Toolbar({ editorState }: ToolbarProps) {
-	const [tool, setTool] = React.useState(Tool.Translation);
-	const [lockGrid, setLockGrid] = React.useState(false);
+export function Toolbar() {
 	return (
 		<div className="toolbar">
 			<Icon
 				button
 				large
-				selected={tool === Tool.Translation}
-				onClick={() => setTool(Tool.Translation)}
-				title="Translation Tool"
+				selected={EditorState.selectedTool === Tool.Translate}
+				onClick={() => EditorState.selectTool(Tool.Translate)}
+				title="Translate"
 				icon="move-outline"
 			/>
 			<Icon
 				button
 				large
-				selected={tool === Tool.Scale}
-				onClick={() => setTool(Tool.Scale)}
-				title="Scale Tool"
+				selected={EditorState.selectedTool === Tool.Scale}
+				onClick={() => EditorState.selectTool(Tool.Scale)}
+				title="Scale"
 				icon="resize-outline"
 			/>
 			<Icon
 				button
 				large
-				selected={tool === Tool.Rotation}
-				onClick={() => setTool(Tool.Rotation)}
-				title="Rotation Tool"
+				selected={EditorState.selectedTool === Tool.Rotate}
+				onClick={() => EditorState.selectTool(Tool.Rotate)}
+				title="Rotate"
 				icon="refresh-outline"
 			/>
 			<div className="spacer" />
 			<Icon
 				button
 				large
-				selected={lockGrid}
-				onClick={() => setLockGrid(!lockGrid)}
+				selected={EditorState.lockGrid}
+				onClick={() => EditorState.toggleLockGrid()}
 				title="Lock to Grid"
 				icon="lock-closed-outline"
 			/>
 			<Icon
 				button
 				large
-				selected={editorState.showGrid}
-				onClick={() => editorState.toggleGrid()}
+				selected={EditorState.showGrid}
+				onClick={() => EditorState.toggleShowGrid()}
 				title="Show Grid"
 				icon="grid-outline"
 			/>
@@ -62,32 +49,38 @@ export function Toolbar({ editorState }: ToolbarProps) {
 				className="grid-size"
 				type="number"
 				min={0}
-				value={editorState.gridSize}
-				onChange={(event) => editorState.resizeGrid(event.target.valueAsNumber)}
+				value={EditorState.gridSize}
+				onChange={(event) => EditorState.resizeGrid(event.target.valueAsNumber)}
 			/>
 			<span className="unit">px</span>
 			<div className="spacer" />
 			<Icon
 				button
 				large
-				disabled={editorState.running}
-				onClick={() => editorState.play()}
+				disabled={
+					EditorState.runtimeState !== RuntimeState.Editable &&
+					EditorState.runtimeState !== RuntimeState.Paused
+				}
+				onClick={() => EditorState.play()}
 				title="Play"
 				icon="play-outline"
 			/>
 			<Icon
 				button
 				large
-				disabled={!editorState.running}
-				onClick={() => editorState.stop()}
+				disabled={EditorState.runtimeState !== RuntimeState.Running}
+				onClick={() => EditorState.stop()}
 				title="Stop"
 				icon="stop-outline"
 			/>
 			<Icon
 				button
 				large
-				disabled={!editorState.readOnly}
-				onClick={() => editorState.resetScene()}
+				disabled={
+					EditorState.runtimeState !== RuntimeState.Running &&
+					EditorState.runtimeState !== RuntimeState.Paused
+				}
+				onClick={() => EditorState.reset()}
 				title="Reset"
 				icon="play-skip-back-outline"
 			/>

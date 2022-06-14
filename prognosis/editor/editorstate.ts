@@ -1,24 +1,31 @@
-import { Color } from "../data/color.js";
 import { Store } from "../data/store.js";
-import { Inspector } from "../inspector.js";
-import { Grid } from "../nodes/grid.js";
 import { Node } from "../nodes/node.js";
 import { Project } from "../project.js";
-import { Resources } from "../resources/resources.js";
 import { SceneResource } from "../resources/sceneResource.js";
 import { Runtime } from "../runtime.js";
 import { Signal } from "../signal.js";
-import { EditorRoot } from "./editorroot.js";
+import { EditorApi } from "./editorApi.js";
+import { DebugRoot } from "../nodes/debugRoot.js";
+import { Root } from "../nodes/root.js";
 
-export function useEditorState() {
-	const [_, forceUpdate] = React.useState({});
-	React.useEffect(() => {
-		const token = stateChanges.connect(() => forceUpdate({}));
-		return () => {
-			stateChanges.disconnect(token);
-		};
-	}, []);
-	return editorState;
+const MaxHistorySize = 1000;
+
+type UndoableAction = {
+	action: () => void;
+	undoAction: () => void;
+};
+
+export enum Tool {
+	Translate = "Translation",
+	Scale = "Scale",
+	Rotate = "Rotate",
+}
+
+export enum RuntimeState {
+	Empty = "Empty",
+	Editable = "Editable",
+	Running = "Running",
+	Paused = "Paused",
 }
 
 export const LayoutConstants = {
@@ -41,198 +48,258 @@ type EditorStore = Store<{
 	layoutConstraints: LayoutConstraints;
 	sceneUrl?: string;
 	selectedNodePath?: string;
-	nodeExpansions: Partial<Record<string, boolean>>;
+	expandedNodePaths: [string, boolean][];
 	gridSize: number;
 }>;
 
-export function startEditorState() {
-	editorState.start();
-}
-
-export class EditorState {
-	#store: EditorStore = new Store("prognosis.editor.store", {
-		layoutConstraints: {
-			desiredInspectorWidth: 300,
-			desiredExplorerWidth: 300,
-			desiredTimelineHeight: 300,
-		},
-		nodeExpansions: {},
-		gridSize: 100,
-	});
-	#editorRoot: EditorRoot = new EditorRoot();
+const EditorStateClass = class EditorState {
+	#store: EditorStore;
+	#history: UndoableAction[] = [];
+	#historyLocation: number = 0;
+	#root: Root;
+	#debugRoot: DebugRoot = new DebugRoot("Root");
+	#layoutConstraints: LayoutConstraints = {
+		desiredInspectorWidth: 300,
+		desiredExplorerWidth: 300,
+		desiredTimelineHeight: 300,
+	};
+	#sceneUrl?: string;
 	#scene?: SceneResource;
 	#selectedNode?: Node;
-	#inspector?: Inspector;
-	#running: boolean = false;
-	#readOnly: boolean = false;
+	#expandedNodes: Map<Node, boolean> = new Map();
+	#selectedTool: Tool = Tool.Translate;
+	#lockGrid: boolean = false;
+	#runtimeState: RuntimeState = RuntimeState.Empty;
 
-	get layoutContraints(): LayoutConstraints {
-		return this.#store.value.layoutConstraints;
-	}
+	updates: Signal = new Signal();
 
-	get gridSize(): number {
-		return this.#store.value.gridSize;
-	}
-
-	get showGrid(): boolean {
-		return this.#editorRoot.showGrid;
+	constructor() {
+		this.#root = Runtime.root;
+		this.#debugRoot.cameraSpeed = Project.graphics.width / 3;
+		this.#debugRoot.gridSize = 100;
+		this.#store = new Store("prognosis.editor.store", {
+			layoutConstraints: this.#layoutConstraints,
+			expandedNodePaths: [],
+			gridSize: this.#debugRoot.gridSize,
+		});
+		this.updates.connect(() => {
+			this.#store.value = {
+				layoutConstraints: this.#layoutConstraints,
+				sceneUrl: this.#sceneUrl,
+				selectedNodePath: this.#selectedNode?.path,
+				expandedNodePaths: Array.from(this.#expandedNodes).map(
+					([node, expanded]) => [node.path, expanded]
+				),
+				gridSize: this.#debugRoot.gridSize,
+			};
+			this.#store.save();
+		});
+		Runtime.root = this.#debugRoot;
+		this.load().then(() => setTimeout(() => Runtime.start()));
 	}
 
 	get editorRoot(): Node {
-		return this.#editorRoot;
+		return this.#debugRoot;
 	}
 
-	get scene(): SceneResource | undefined {
-		return this.#scene;
+	get layoutConstraints(): LayoutConstraints {
+		return { ...this.#layoutConstraints };
 	}
 
 	get selectedNode(): Node | undefined {
 		return this.#selectedNode;
 	}
 
-	get inspector(): Inspector | undefined {
-		return this.#inspector;
-	}
-
-	get running(): boolean {
-		return this.#running;
-	}
-
-	get readOnly(): boolean {
-		return this.#readOnly;
-	}
-
 	nodeExpanded(node: Node): boolean {
-		return this.#store.value.nodeExpansions[node.path] === true;
+		return this.#expandedNodes.get(node) ?? false;
 	}
 
-	async start() {
-		Runtime.root.removeAll();
-		Runtime.root.add(this.#editorRoot);
-		this.#editorRoot.cameraSpeed = Project.graphics.width / 3;
-		this.#editorRoot.gridSize = this.#store.value.gridSize;
-		const sceneUrl = this.#store.value.sceneUrl;
-		if (sceneUrl !== undefined) {
-			this.#scene = await Resources.load(SceneResource, sceneUrl);
-			this.resetScene();
+	get selectedTool(): Tool {
+		return this.#selectedTool;
+	}
+
+	get lockGrid(): boolean {
+		return this.#lockGrid;
+	}
+
+	get showGrid(): boolean {
+		return this.#debugRoot.showGrid;
+	}
+
+	get gridSize(): number {
+		return this.#debugRoot.gridSize;
+	}
+
+	get runtimeState(): RuntimeState {
+		return this.#runtimeState;
+	}
+
+	async load() {
+		const store = this.#store.value;
+		this.#layoutConstraints = store.layoutConstraints;
+		this.#sceneUrl = store.sceneUrl;
+		this.#debugRoot.gridSize = store.gridSize;
+		if (store.sceneUrl !== undefined) {
+			this.#scene = await SceneResource.load(store.sceneUrl);
+			this.reset();
 		}
 	}
 
-	resetScene() {
-		this.#editorRoot.removeAll();
-		if (this.#scene !== undefined) {
-			this.#editorRoot?.add(this.#scene.toNode());
+	saveSceneChanges() {
+		if (
+			this.#runtimeState === RuntimeState.Editable &&
+			this.#sceneUrl !== undefined
+		) {
+			this.#scene = SceneResource.fromNodes(this.#debugRoot.children);
+			EditorApi.save(this.#sceneUrl, SceneResource.toStore(this.#scene));
 		}
-		const selectedNodePath = this.#store.value.selectedNodePath;
-		if (selectedNodePath !== undefined) {
-			this.#selectedNode = this.#editorRoot.find(selectedNodePath);
-			this.#inspector = new Inspector();
-			this.#selectedNode?._inspect(this.#inspector);
-		} else {
-			this.#selectedNode = undefined;
-		}
-		this.#readOnly = false;
-		stateChanges.send();
 	}
 
-	async loadScene(sceneUrl: string) {
-		const scene = await Resources.load(SceneResource, sceneUrl);
-		this.#store.value.sceneUrl = sceneUrl;
-		this.#store.value.selectedNodePath = undefined;
-		this.#store.value.nodeExpansions = {};
-		this.#scene = scene;
-		this.#store.save();
-		this.resetScene();
-	}
-
-	selectNode(node: Node) {
-		if (node === this.#selectedNode) {
-			return;
+	undoable(action: UndoableAction) {
+		this.#history.length = this.#historyLocation;
+		this.#history.push(action);
+		if (this.#history.length > MaxHistorySize) {
+			this.#history.shift();
 		}
-		this.#selectedNode = node;
-		this.#inspector = new Inspector();
-		this.#selectedNode._inspect(this.#inspector);
-		this.#store.value.selectedNodePath = node.path;
-		this.#store.save();
-		stateChanges.send();
+		this.#historyLocation = this.#history.length;
+		action.action();
+		this.updates.send();
 	}
 
-	toggleNodeExpansion(node: Node) {
-		const expanded = this.nodeExpanded(node);
-		this.#store.value.nodeExpansions[node.path] = !expanded;
-		this.#store.save();
-		stateChanges.send();
+	undo() {
+		if (this.#historyLocation === 0) {
+			return; // TODO indicate to user cannot undo
+		}
+		const action = this.#history[--this.#historyLocation];
+		action.undoAction();
+		this.updates.send();
+	}
+
+	redo() {
+		if (this.#historyLocation === this.#history.length) {
+			return; // TODO indicate to user cannot redo
+		}
+		const action = this.#history[this.#historyLocation++];
+		action.action();
+		this.updates.send();
 	}
 
 	resizeInspector(delta: number) {
 		if (delta === 0) {
 			return;
 		}
-		this.#store.value.layoutConstraints.desiredInspectorWidth = Math.max(
+		this.#layoutConstraints.desiredInspectorWidth = Math.max(
 			LayoutConstants.InspectorMinWidth,
-			this.layoutContraints.desiredInspectorWidth - delta
+			this.#layoutConstraints.desiredInspectorWidth - delta
 		);
-		this.#store.save();
-		stateChanges.send();
+		this.updates.send();
 	}
 
 	resizeExplorer(delta: number) {
 		if (delta === 0) {
 			return;
 		}
-		this.#store.value.layoutConstraints.desiredExplorerWidth = Math.max(
+		this.#layoutConstraints.desiredExplorerWidth = Math.max(
 			LayoutConstants.ExplorerMinWidth,
-			this.layoutContraints.desiredExplorerWidth - delta
+			this.#layoutConstraints.desiredExplorerWidth - delta
 		);
-		this.#store.save();
-		stateChanges.send();
+		this.updates.send();
 	}
 
 	resizeTimeline(delta: number) {
 		if (delta === 0) {
 			return;
 		}
-		this.#store.value.layoutConstraints.desiredTimelineHeight = Math.max(
+		this.#layoutConstraints.desiredTimelineHeight = Math.max(
 			LayoutConstants.TimelineMinHeight,
-			this.layoutContraints.desiredTimelineHeight - delta
+			this.#layoutConstraints.desiredTimelineHeight - delta
 		);
-		this.#store.save();
-		stateChanges.send();
+		this.updates.send();
 	}
 
-	resizeGrid(newGridSize: number) {
-		this.#editorRoot.gridSize = newGridSize;
-		this.#store.value.gridSize = newGridSize;
-		this.#store.save();
-		stateChanges.send();
+	async loadScene(sceneUrl: string) {
+		const scene = await SceneResource.load(sceneUrl);
+		this.#history = [];
+		this.#sceneUrl = sceneUrl;
+		this.#selectedNode = undefined;
+		this.#expandedNodes.clear();
+		this.#scene = scene;
+		this.reset();
 	}
 
-	toggleGrid() {
-		this.#editorRoot.showGrid = !this.#editorRoot.showGrid;
-		stateChanges.send();
+	selectNode(node?: Node) {
+		if (this.#selectedNode === node) {
+			return;
+		}
+		this.#selectedNode = node;
+		this.updates.send();
+	}
+
+	toggleNodeExpanded(node: Node) {
+		this.#expandedNodes.set(node, !this.nodeExpanded(node));
+		this.updates.send();
+	}
+
+	selectTool(tool: Tool) {
+		this.#selectedTool = tool;
+		this.updates.send();
+	}
+
+	toggleLockGrid() {
+		this.#lockGrid = !this.lockGrid;
+		this.updates.send();
+	}
+
+	toggleShowGrid() {
+		this.#debugRoot.showGrid = !this.showGrid;
+		this.updates.send();
+	}
+
+	resizeGrid(gridSize: number) {
+		if (this.#debugRoot.gridSize === gridSize) {
+			return;
+		}
+		this.#debugRoot.gridSize = gridSize;
+		this.updates.send();
 	}
 
 	play() {
-		this.#readOnly = true;
-		this.#running = true;
-		Runtime.root.remove(this.#editorRoot);
-		this.#editorRoot.children.forEach((childNode) => {
-			Runtime.root.add(childNode);
-		});
-		stateChanges.send();
+		this.#scene = SceneResource.fromNodes(this.#debugRoot.children);
+		this.#runtimeState = RuntimeState.Running;
+		this.#root.addAll(Runtime.root.children);
+		Runtime.root = this.#root;
+		this.updates.send();
 	}
 
 	stop() {
-		this.#running = false;
-		Runtime.root.children.forEach((childNode) => {
-			this.#editorRoot.add(childNode);
-		});
-		Runtime.root.add(this.#editorRoot);
-		stateChanges.send();
+		this.#runtimeState = RuntimeState.Paused;
+		this.#debugRoot.addAll(Runtime.root.children);
+		Runtime.root = this.#debugRoot;
+		this.updates.send();
 	}
-}
 
-const stateChanges = new Signal();
-const editorState = new EditorState();
+	reset() {
+		Runtime.root = this.#debugRoot;
+		this.#debugRoot.removeAll();
+		this.#selectedNode = undefined;
+		this.#expandedNodes.clear();
+		this.#runtimeState = RuntimeState.Empty;
+		if (this.#scene !== undefined) {
+			this.#debugRoot.addAll(this.#scene.toNodes());
+			this.#runtimeState = RuntimeState.Editable;
+			const store = this.#store.value;
+			if (store.selectedNodePath !== undefined) {
+				this.#selectedNode = Runtime.findByPath(store.selectedNodePath);
+			}
+			for (const [path, expanded] of store.expandedNodePaths) {
+				const node = Runtime.findByPath(path);
+				if (node !== undefined) {
+					this.#expandedNodes.set(node, expanded);
+				}
+			}
+		}
+		this.updates.send();
+	}
+};
 
-(window as any).editorState = editorState;
+export const EditorState = new EditorStateClass();

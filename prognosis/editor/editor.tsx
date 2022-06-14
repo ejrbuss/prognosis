@@ -1,25 +1,43 @@
 import {
 	LayoutConstants,
 	LayoutConstraints,
-	useEditorState,
-} from "./editorstate.js";
+	EditorState,
+	RuntimeState,
+} from "./editorState.js";
 import { Explorer } from "./explorer.js";
 import { Gutter } from "./gutter.js";
-import { useRerender } from "./hooks.js";
+import { useEventListener, useRerender, useSignal } from "./reactUtil.js";
 import { Inspector } from "./inspector.js";
 import { Preview } from "./preview.js";
 import { Timeline } from "./timeline.js";
 import { Toolbar } from "./toolbar.js";
 
 export function Editor() {
-	const editorState = useEditorState();
 	const rerender = useRerender();
-	React.useEffect(() => {
-		const listener = () => rerender();
-		window.addEventListener("resize", listener);
-		return () => window.removeEventListener("resize", listener);
+	useSignal(EditorState.updates);
+	useEventListener(window, "resize", rerender);
+	useEventListener(window, "keydown", (event) => {
+		const keyEvent = event as KeyboardEvent;
+		// Redo
+		if (keyEvent.key === "z" && keyEvent.metaKey && keyEvent.shiftKey) {
+			if (EditorState.runtimeState === RuntimeState.Editable) {
+				EditorState.redo();
+			}
+			keyEvent.stopPropagation();
+			keyEvent.preventDefault();
+			return;
+		}
+		// Undo
+		if (keyEvent.key === "z" && keyEvent.metaKey) {
+			if (EditorState.runtimeState === RuntimeState.Editable) {
+				EditorState.undo();
+			}
+			keyEvent.stopPropagation();
+			keyEvent.preventDefault();
+			return;
+		}
 	});
-	const layout = layoutSolver(editorState.layoutContraints);
+	const layout = layoutSolver(EditorState.layoutConstraints);
 	return (
 		<div
 			className="editor"
@@ -39,16 +57,13 @@ export function Editor() {
 				].join(" "),
 			}}
 		>
-			<Toolbar editorState={editorState} />
-			<Gutter vertical onDrag={(delta) => editorState.resizeInspector(delta)} />
-			<Inspector editorState={editorState} />
-			<Gutter vertical onDrag={(delta) => editorState.resizeExplorer(delta)} />
-			<Explorer editorState={editorState} />
+			<Toolbar />
+			<Gutter vertical onDrag={(d) => EditorState.resizeInspector(d)} />
+			<Inspector />
+			<Gutter vertical onDrag={(d) => EditorState.resizeExplorer(d)} />
+			<Explorer />
 			<Preview />
-			<Gutter
-				horizontal
-				onDrag={(delta) => editorState.resizeTimeline(delta)}
-			/>
+			<Gutter horizontal onDrag={(d) => EditorState.resizeTimeline(d)} />
 			<Timeline />
 		</div>
 	);

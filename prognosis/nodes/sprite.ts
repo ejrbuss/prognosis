@@ -1,14 +1,13 @@
-import { Color } from "../data/color.js";
-import { Node } from "./node.js";
+import { icon, Node, variable } from "./node.js";
 import { Point } from "../data/point.js";
 import { SpriteResource } from "../resources/spriteResource.js";
 
+@icon("color-palette-outline")
 export class Sprite extends Node {
-	origin: Point = Point.Origin;
-	scale: Point = new Point(1, 1);
-	rotation: number = 0;
-	spriteResource?: SpriteResource;
-	debug: boolean = false;
+	@variable(Point) origin: Point = Point.Origin;
+	@variable(Point) scale: Point = new Point(1, 1);
+	@variable(Number) rotation: number = 0;
+	spriteResource?: SpriteResource; // TODO @variable(SpriteResource)
 
 	get width(): number {
 		const bitmap = this.spriteResource?.bitmap;
@@ -45,17 +44,13 @@ export class Sprite extends Node {
 			const x = hw * this.origin.x - hw;
 			const y = hh * this.origin.y - hh;
 			context.drawImage(bitmap, x, y);
-			if (this.debug) {
-				context.strokeStyle = Color.Green.hex;
-				context.strokeRect(x, y, bitmap.width, bitmap.height);
-				context.fillStyle = Color.Red.hex;
-				context.fillRect(0, 0, 3, 3);
-			}
+			// if (this.debug) {
+			// 	context.strokeStyle = Color.Green.hex;
+			// 	context.strokeRect(x, y, bitmap.width, bitmap.height);
+			// 	context.fillStyle = Color.Red.hex;
+			// 	context.fillRect(0, 0, 3, 3);
+			// }
 			context.restore();
 		}
-	}
-
-	get icon(): string {
-		return "color-palette-outline";
 	}
 }

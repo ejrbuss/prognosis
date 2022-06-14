@@ -1,4 +1,5 @@
 import { Schema } from "../data/schema.js";
+import { JsonData } from "../data/store.js";
 
 export namespace EditorApi {
 	export async function getFileUrl(file: File): Promise<string> {
@@ -18,6 +19,16 @@ export namespace EditorApi {
 		await fetch("/editor/api/openFileUrl", {
 			method: "post",
 			body: JSON.stringify({ fileUrl }),
+		});
+	}
+
+	export async function save(sceneUrl: string, sceneData: JsonData) {
+		await fetch("/editor/api/save", {
+			method: "post",
+			body: JSON.stringify({
+				sceneUrl,
+				sceneData,
+			}),
 		});
 	}
 }

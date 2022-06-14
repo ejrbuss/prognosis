@@ -1,4 +1,4 @@
-import { classNames } from "./classnames.js";
+import { classNames } from "./reactUtil.js";
 
 export type IconProps = {
 	icon: string;

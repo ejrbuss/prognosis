@@ -1,33 +1,27 @@
-export interface Resource<Params extends any[] = []> {
-	load(url: string, ...params: Params): Promise<void>;
-}
-
 const ResourcesClass = class Resources {
-	#loadingResourcesCount: number = 0;
+	#loadingCount: number = 0;
 	#pool: Record<string, Promise<any>> = {};
 
-	get loadingResourcesCount(): number {
-		return this.#loadingResourcesCount;
+	get loadingCount(): number {
+		return this.#loadingCount;
 	}
 
 	get loading(): boolean {
-		return this.#loadingResourcesCount > 0;
+		return this.#loadingCount > 0;
 	}
 
-	async load<Params extends any[], ResourceType extends Resource<Params>>(
-		resourceConstructor: { new (): ResourceType },
+	async load<ResourceType>(
 		url: string,
-		...params: Params
+		thunk: () => Promise<ResourceType>
 	): Promise<ResourceType> {
 		if (url in this.#pool) {
 			return this.#pool[url];
 		}
-		this.#loadingResourcesCount += 1;
-		const resource = new resourceConstructor();
-		const promise = resource.load(url, ...params).then(() => resource);
+		this.#loadingCount += 1;
+		const promise = thunk();
 		this.#pool[url] = promise;
-		await promise;
-		this.#loadingResourcesCount -= 1;
+		const resource = await promise;
+		this.#loadingCount -= 1;
 		return resource;
 	}
 };

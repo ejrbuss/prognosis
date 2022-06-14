@@ -1,11 +1,82 @@
 {
-	"root": 0,
-	"nodes": [
-		{
-			"name": "Surface",
-			"type": "Surface",
-			"properties": {},
-			"children": []
-		}
-	]
+    "rootNodes": [
+        0,
+        3
+    ],
+    "nodeData": [
+        {
+            "name": "Screen",
+            "type": "Layer",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 100,
+                "priority": 0,
+                "fixed": false
+            },
+            "children": [
+                1
+            ]
+        },
+        {
+            "name": "DebugInfo",
+            "type": "DebugInfo",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": 0
+            },
+            "children": [
+                2
+            ]
+        },
+        {
+            "name": "Text",
+            "type": "Text",
+            "variables": {
+                "x": -600,
+                "y": -320,
+                "z": 0,
+                "priority": 0,
+                "text": "Text",
+                "fontFamily": "monospace",
+                "fontSize": 12,
+                "fontStyle": "Normal",
+                "fontWeight": "Normal",
+                "alignment": "Left",
+                "color": -34127873
+            },
+            "children": []
+        },
+        {
+            "name": "Layer",
+            "type": "Layer",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": 0,
+                "fixed": false
+            },
+            "children": [
+                4
+            ]
+        },
+        {
+            "name": "Rectangle",
+            "type": "Rectangle",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": 0,
+                "rotation": 0,
+                "width": 1280,
+                "height": 720,
+                "color": 255
+            },
+            "children": []
+        }
+    ]
 }

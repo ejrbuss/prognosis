@@ -14,7 +14,18 @@
 			<canvas tabindex="1" id="game-canvas"></canvas>
 		</div>
 	</main>
-	<script type="module" src="/prognosis/main.js"></script>
+	<script type="module">
+		import "/prognosis/math.js";
+		import { Project } from "/prognosis/project.js";
+		import { Runtime } from "/prognosis/runtime.js";
+		import { SceneResource } from "/prognosis/resources/sceneResource.js";
+
+		// Load project files
+		await import("/prognosis/load.js");
+
+		Runtime.root.addAll((await SceneResource.load(Project.initialScene)).toNodes());
+		Runtime.start();
+	</script>
 </body>
 
 </html>

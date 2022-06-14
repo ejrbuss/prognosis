@@ -9,7 +9,7 @@ declare global {
 		}
 	}
 
-	// Match monkey patching
+	// Math monkey patching
 	interface Math {
 		clamp(value: number, min: number, max: number): number;
 		lerp(start: number, end: number, amount: number): number;

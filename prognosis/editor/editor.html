@@ -18,17 +18,18 @@
 	<script type="module" crossorigin src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
 	<!-- Prognosis -->
 	<script type="module">
-		// Start the editor UI
-		import { Editor } from "/prognosis/editor/editor.js";
+		import "/prognosis/math.js";
+		import { Project } from "/prognosis/project.js";
+		import { Runtime } from "/prognosis/runtime.js";
+		import { SceneResource } from "/prognosis/resources/sceneResource.js";
+
+		// Load project files
+		await import("/prognosis/load.js");
+
+		const { Editor } = await import("/prognosis/editor/editor.js");
+
+		// Start the editor
 		ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Editor, null));
-
-		// Force main to load late
-		await import("/prognosis/main.js");
-
-		// Start the editor State
-		import { startEditorState } from "/prognosis/editor/editorstate.js";
-		startEditorState();
-
 	</script>
 </body>
 

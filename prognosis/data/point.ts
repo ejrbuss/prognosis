@@ -1,6 +1,13 @@
 import { Tweenable } from "../tween.js";
+import { Schema, SchemaType } from "./schema.js";
+import { JsonData } from "./store.js";
 
-type PointProps = { x: number; y: number };
+const PointPropsSchema = Schema.object({
+	x: Schema.number,
+	y: Schema.number,
+});
+
+type PointProps = SchemaType<typeof PointPropsSchema>;
 
 export class Point implements Tweenable<Point> {
 	static Origin = new Point(0, 0);
@@ -8,6 +15,18 @@ export class Point implements Tweenable<Point> {
 	static Left = new Point(-1, 0);
 	static Up = new Point(0, 1);
 	static Down = new Point(0, -1);
+
+	static copy(point: Point) {
+		return point;
+	}
+
+	static toStore(point: Point): JsonData {
+		return { x: point.x, y: point.y };
+	}
+
+	static fromStore(data: JsonData): Point {
+		return Point.Origin.with(PointPropsSchema.assert(data));
+	}
 
 	constructor(readonly x: number, readonly y: number) {}
 

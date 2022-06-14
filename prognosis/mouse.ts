@@ -14,7 +14,6 @@ const MouseClass = class Mouse {
 		Graphics.canvas.addEventListener("mousemove", pushEvent);
 		Graphics.canvas.addEventListener("mousedown", pushEvent);
 		Graphics.canvas.addEventListener("mouseup", pushEvent);
-		Runtime.updates.connect(this.update.bind(this));
 	}
 
 	update() {

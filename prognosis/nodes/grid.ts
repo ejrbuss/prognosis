@@ -1,13 +1,13 @@
+import { icon, Node, variable } from "./node.js";
 import { Color } from "../data/color.js";
-import { Inspector, propertiesOf } from "../inspector.js";
-import { Node } from "./node.js";
 
+@icon("grid-outline")
 export class Grid extends Node {
-	size: number = 16;
-	rotation: number = 0;
-	width: number = 100;
-	height: number = 100;
-	color: Color = Color.Black;
+	@variable(Number) size: number = 16;
+	@variable(Number) rotation: number = 0;
+	@variable(Number) width: number = 100;
+	@variable(Number) height: number = 100;
+	@variable(Color) color: Color = Color.Black;
 
 	render(context: CanvasRenderingContext2D) {
 		const w = this.width;
@@ -35,18 +35,5 @@ export class Grid extends Node {
 		context.closePath();
 		context.strokeStyle = this.color.hex;
 		context.stroke();
-	}
-
-	inspect(inspector: Inspector) {
-		const properties = propertiesOf(this);
-		inspector.inspectNumber(properties.size);
-		inspector.inspectNumber(properties.rotation);
-		inspector.inspectNumber(properties.width);
-		inspector.inspectNumber(properties.height);
-		inspector.inspectColor(properties.color);
-	}
-
-	get icon(): string {
-		return "grid-outline";
 	}
 }

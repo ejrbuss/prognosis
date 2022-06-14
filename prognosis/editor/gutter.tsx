@@ -1,4 +1,4 @@
-import { classNames } from "./classnames.js";
+import { classNames, useEventListener } from "./reactUtil.js";
 
 export type GutterProps = {
 	horizontal?: boolean;
@@ -15,7 +15,6 @@ export function Gutter({ horizontal, vertical, onDrag }: GutterProps) {
 					setSelected(false);
 				} else {
 					event.stopPropagation();
-					event.preventDefault();
 					if (horizontal) {
 						onDrag(event.movementY);
 					} else {

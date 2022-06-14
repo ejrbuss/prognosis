@@ -1,0 +1,16 @@
+{
+	"configurations": [
+		{
+			"type": "pwa-chrome",
+			"name": "Prognosis Game",
+			"request": "launch",
+			"url": "http://localhost:8080"
+		},
+		{
+			"type": "pwa-chrome",
+			"name": "Prognosis Editor",
+			"request": "launch",
+			"url": "http://localhost:8080/editor"
+		},
+	]
+}

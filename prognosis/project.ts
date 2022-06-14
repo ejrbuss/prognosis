@@ -1,8 +1,9 @@
 import { Schema } from "./data/schema.js";
+import { Node } from "./nodes/node.js";
 
 const ProjectSchema = Schema.object({
 	title: Schema.string,
-	root: Schema.string,
+	initialScene: Schema.string,
 	graphics: Schema.object({
 		width: Schema.number,
 		height: Schema.number,

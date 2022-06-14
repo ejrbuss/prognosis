@@ -101,6 +101,14 @@ async function editorApi(
 			});
 			return;
 		}
+		if ("/editor/api/save") {
+			const body = await jsonBody(request);
+			const scenePath = `.${body.sceneUrl}`;
+			await fs.writeFile(scenePath, JSON.stringify(body.sceneData, null, 4));
+			response.writeHead(200);
+			response.end();
+			return;
+		}
 		throw new Error("Unknown API endpoint!");
 	} catch (error) {
 		response.writeHead(500);

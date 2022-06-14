@@ -1,40 +1,54 @@
 import { Point } from "./point.js";
+import { Schema, SchemaType } from "./schema.js";
+import { JsonData } from "./store.js";
 
-export type CameraProps = {
-	x: number;
-	y: number;
-	position: Point;
-	zoom: number;
-	rotation: number;
-};
+const CameraPropsSchema = Schema.object({
+	x: Schema.number,
+	y: Schema.number,
+	zoom: Schema.number,
+	rotation: Schema.number,
+});
+
+type CameraProps = SchemaType<typeof CameraPropsSchema>;
 
 export class Camera {
-	position: Point = Point.Origin;
+	static copy(camera: Camera): Camera {
+		return camera.with({});
+	}
+
+	static toStore(camera: Camera): JsonData {
+		return {
+			x: camera.x,
+			y: camera.y,
+			zoom: camera.zoom,
+			rotation: camera.rotation,
+		};
+	}
+
+	static fromStore(data: JsonData): Camera {
+		return new Camera().with(CameraPropsSchema.assert(data));
+	}
+
+	x: number = 0;
+	y: number = 0;
 	zoom: number = 1;
 	rotation: number = 0;
 
+	get position(): Point {
+		return new Point(this.x, this.y);
+	}
+
+	set position(position: Point) {
+		this.x = position.x;
+		this.y = position.y;
+	}
+
 	with(props: Partial<CameraProps>): Camera {
 		const camera = new Camera();
-		camera.x = props.x ?? props.position?.x ?? this.x;
-		camera.y = props.y ?? props.position?.y ?? this.y;
+		camera.x = props.x ?? this.x;
+		camera.y = props.y ?? this.y;
 		camera.zoom = props.zoom ?? this.zoom;
 		camera.rotation = props.rotation ?? this.rotation;
 		return camera;
-	}
-
-	get x(): number {
-		return this.position.x;
-	}
-
-	set x(x: number) {
-		this.position = this.position.with({ x });
-	}
-
-	get y(): number {
-		return this.position.y;
-	}
-
-	set y(y: number) {
-		this.position = this.position.with({ y });
 	}
 }

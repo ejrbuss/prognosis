@@ -1,18 +1,148 @@
 import { Point } from "../data/point.js";
-import { Inspector, propertiesOf } from "../inspector.js";
+import { Schema } from "../data/schema.js";
+import { JsonData } from "../data/store.js";
 
-const CountPattern = /(.* )\((\d+)\)$/;
-
-function incrementName(name: string): string {
-	const match = name.match(CountPattern);
-	if (match === null) {
-		return `${name} (1)`;
-	}
-	const count = parseInt(match[2]);
-	return `${match[1]} (${count + 1})`;
+export interface Variable<Type> {
+	copy(value: Type): Type;
+	toStore(value: Type): JsonData;
+	fromStore(data: JsonData): Type;
 }
 
+export class BooleanVariable {
+	static copy(value: boolean): boolean {
+		return value;
+	}
+
+	static toStore(value: boolean): JsonData {
+		return value;
+	}
+
+	static fromStore(data: JsonData): boolean {
+		return Schema.boolean.assert(data);
+	}
+}
+
+export class NumberVariable {
+	static copy(value: number): number {
+		return value;
+	}
+
+	static toStore(value: number): JsonData {
+		return value;
+	}
+
+	static fromStore(data: JsonData): number {
+		return Schema.number.assert(data);
+	}
+}
+
+export class StringVariable {
+	static copy(value: string): string {
+		return value;
+	}
+
+	static toStore(value: string): JsonData {
+		return value;
+	}
+
+	static fromStore(data: JsonData): string {
+		return Schema.string.assert(data);
+	}
+}
+
+export class EnumVariable<Enum> implements Variable<Enum> {
+	constructor(readonly keys: string[], readonly values: Enum[]) {}
+
+	keyOf(value: Enum): string {
+		return this.keys[this.values.indexOf(value)];
+	}
+
+	valueOf(key: string): Enum {
+		return this.values[this.keys.indexOf(key)];
+	}
+
+	copy(value: Enum): Enum {
+		return value;
+	}
+
+	toStore(value: Enum): JsonData {
+		return this.keyOf(value);
+	}
+
+	fromStore(data: JsonData): Enum {
+		return this.valueOf(Schema.string.assert(data));
+	}
+}
+
+export function Enum<Enum>(enumValues: Record<string, Enum>): Variable<Enum> {
+	return new EnumVariable(Object.keys(enumValues), Object.values(enumValues));
+}
+
+export function variable<Type>(
+	variable:
+		| BooleanConstructor
+		| NumberConstructor
+		| StringConstructor
+		| Variable<Type>
+) {
+	return function variableDecorator(target: Node, key: string) {
+		if (variable === Boolean) {
+			Node.metadataFor(target).variables[key] = BooleanVariable;
+			return;
+		}
+		if (variable === Number) {
+			Node.metadataFor(target).variables[key] = NumberVariable;
+			return;
+		}
+		if (variable === String) {
+			Node.metadataFor(target).variables[key] = StringVariable;
+			return;
+		}
+		Node.metadataFor(target).variables[key] = variable as Variable<any>;
+	};
+}
+
+export function icon(icon: string) {
+	return function iconDecorator(target: typeof Node) {
+		Node.metadataFor(target).icon = icon;
+	};
+}
+
+type NodeMetadata = {
+	type: { new (name?: string): Node };
+	icon: string;
+	modulePath: string;
+	variables: Record<string, Variable<any>>;
+};
+
 export class Node {
+	static Metadata: Partial<Record<string, NodeMetadata>> = {};
+
+	static metadataFor(node: typeof Node | Node | string): NodeMetadata {
+		let nodeName: string;
+		if (typeof node === "function") {
+			nodeName = node.name;
+		} else if (typeof node === "string") {
+			nodeName = node;
+		} else {
+			nodeName = node.constructor.name;
+		}
+		let nodeMetadata = Node.Metadata[nodeName];
+		if (nodeMetadata === undefined) {
+			nodeMetadata = {
+				icon: "cube-outline",
+				variables: {
+					x: NumberVariable,
+					y: NumberVariable,
+					z: NumberVariable,
+					priority: NumberVariable,
+				},
+			} as any;
+			Node.Metadata[nodeName] = nodeMetadata;
+		}
+		return nodeMetadata as NodeMetadata;
+	}
+
 	#name: string;
 	#started: boolean = false;
 	#parent?: Node;
@@ -31,12 +161,13 @@ export class Node {
 	}
 
 	set name(name: string) {
-		while (
-			this.#parent?.children.some(
-				(child) => child !== this && child.name === name
-			)
-		) {
-			name = incrementName(name);
+		const parent = this.#parent;
+		if (parent !== undefined) {
+			while (
+				parent.#children.some((child) => child !== this && child.name === name)
+			) {
+				name = incrementName(name);
+			}
 		}
 		this.#name = name;
 	}
@@ -53,17 +184,8 @@ export class Node {
 		return this.#parent;
 	}
 
-	get children(): Readonly<Node[]> {
-		return this.#children;
-	}
-
-	get localPosition(): Point {
-		return new Point(this.localX, this.localY);
-	}
-
-	set localPosition(localPosition: Point) {
-		this.localX = localPosition.x;
-		this.localY = localPosition.y;
+	get children(): Node[] {
+		return this.#children.slice();
 	}
 
 	get x(): number {
@@ -82,6 +204,15 @@ export class Node {
 		this.localY = y - (this.#parent?.y ?? 0);
 	}
 
+	get localPosition(): Point {
+		return new Point(this.localX, this.localY);
+	}
+
+	set localPosition(localPosition: Point) {
+		this.localX = localPosition.x;
+		this.localY = localPosition.y;
+	}
+
 	get position(): Point {
 		return new Point(this.x, this.y);
 	}
@@ -91,7 +222,7 @@ export class Node {
 		this.y = position.y;
 	}
 
-	find(path: string): Node | undefined {
+	findByPath(path: string): Node | undefined {
 		const seperator = path.indexOf("/");
 		if (seperator === -1) {
 			throw new Error(`Invalid  Node path "${path}"!`);
@@ -101,7 +232,7 @@ export class Node {
 		if (path.length === name.length + 1) {
 			return child;
 		}
-		return child?.find(path.substring(seperator + 1));
+		return child?.findByPath(path.substring(seperator + 1));
 	}
 
 	add(node: Node) {
@@ -124,6 +255,10 @@ export class Node {
 		}
 	}
 
+	addAll(nodes: Node[]) {
+		nodes.forEach((node) => this.add(node));
+	}
+
 	remove(node: Node): boolean {
 		const index = this.#children.indexOf(node);
 		if (index !== -1) {
@@ -137,8 +272,8 @@ export class Node {
 		return false;
 	}
 
-	removeAll() {
-		this.#children.forEach((child) => this.remove(child));
+	removeAll(nodes?: Node[]) {
+		(nodes ?? this.children).forEach((child) => this.remove(child));
 	}
 
 	has(nodeType: typeof Node): boolean {
@@ -153,17 +288,14 @@ export class Node {
 		) as InstanceType<NodeType>;
 	}
 
-	clone(): this {
-		const clone: this = new (this.constructor as any)(this.name);
-		const thisInspector = new Inspector();
-		this._inspect(thisInspector);
-		const cloneInspector = new Inspector();
-		clone._inspect(cloneInspector);
-		cloneInspector.fromJson(thisInspector.toJson());
-		this.#children.forEach((child) => {
-			clone.add(child.clone());
-		});
-		return clone;
+	copy(): this {
+		const metadata = Node.metadataFor(this);
+		const copy = new metadata.type(this.name) as this;
+		for (const name in metadata.variables) {
+			const variable = metadata.variables[name];
+			(copy as any)[name] = variable.copy((this as any)[name]);
+		}
+		return copy;
 	}
 
 	// Lifecycle methods
@@ -228,19 +360,6 @@ export class Node {
 
 	// Debug lifecycle methods
 
-	_inspect(inspector: Inspector) {
-		const properties = propertiesOf(this);
-		inspector.header("Node Properties");
-		inspector.inspectNumber(properties.x);
-		inspector.inspectNumber(properties.y);
-		inspector.inspectNumber(properties.z);
-		inspector.inspectNumber(properties.priority);
-		if (this.inspect !== undefined) {
-			inspector.header(`${this.constructor.name} Properties`);
-			this.inspect(inspector);
-		}
-	}
-
 	_debugUpdate() {
 		const preUpdate: Node[] = [];
 		const postUpdate: Node[] = [];
@@ -253,11 +372,11 @@ export class Node {
 		});
 		preUpdate.sort((a, b) => b.priority - a.priority);
 		postUpdate.sort((a, b) => b.priority - a.priority);
-		preUpdate.forEach((child) => child._update());
+		preUpdate.forEach((child) => child._debugUpdate());
 		if (this.debugUpdate !== undefined) {
 			this.debugUpdate();
 		}
-		postUpdate.forEach((child) => child._update());
+		postUpdate.forEach((child) => child._debugUpdate());
 	}
 
 	_debugRender(context: CanvasRenderingContext2D) {
@@ -283,16 +402,21 @@ export class Node {
 		context.translate(-this.localX, -this.localY);
 	}
 
-	get icon(): string {
-		return "cube-outline";
-	}
+	// Debug hooks
 
-	// Editor hooks
-
-	inspect?(inspector: Inspector): void;
 	debugUpdate?(): void;
 	debugRender?(context: CanvasRenderingContext2D): void;
 }
 
-export const NodeTypes: Record<string, typeof Node> = {};
-export const NodeTypeSourceLocation: Record<string, string> = {};
+// TODO better home?
+
+const CountPattern = /(.* )\((\d+)\)$/;
+
+function incrementName(name: string): string {
+	const match = name.match(CountPattern);
+	if (match === null) {
+		return `${name} (1)`;
+	}
+	const count = parseInt(match[2]);
+	return `${match[1]} (${count + 1})`;
+}

@@ -1,7 +1,8 @@
 import { SpriteSheetResource } from "../resources/spriteSheetResource.js";
-import { Node } from "./node.js";
+import { icon, Node } from "./node.js";
 import { Sprite } from "./sprite.js";
 
+@icon("videocam-outline")
 export class Animation extends Node {
 	spriteComponent?: Sprite;
 	spriteSheetResource?: SpriteSheetResource;
@@ -21,9 +22,5 @@ export class Animation extends Node {
 			this.spriteComponent.spriteResource =
 				this.spriteSheetResource.frames[this.frameKey]?.spriteResource;
 		}
-	}
-
-	get icon(): string {
-		return "videocam-outline";
 	}
 }

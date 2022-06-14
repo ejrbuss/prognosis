@@ -1,5 +1,5 @@
 import { Schema } from "../data/schema.js";
-import { Resources, Resource } from "./resources.js";
+import { Resources } from "./resources.js";
 import { SpriteResource } from "./spriteResource.js";
 
 const FrameSchema = Schema.object({
@@ -23,29 +23,33 @@ export class Frame {
 	) {}
 }
 
-export class SpriteSheetResource implements Resource<[string]> {
-	frames!: Partial<Record<string, Frame>>;
+export type Frames = Partial<Record<string, Frame>>;
 
-	async load(url: string, spriteUrl: string): Promise<void> {
-		const spriteResourcePromise = Resources.load(SpriteResource, spriteUrl);
-		const spriteSheetJson = await (await fetch(url)).json();
-		const spriteResource = await spriteResourcePromise;
-		const spriteSheet = SpriteSheetSchema.assert(spriteSheetJson);
-		this.frames = {};
-		await Promise.all(
-			Object.keys(spriteSheet.frames).map(async (frameKey) => {
-				const frame = spriteSheet.frames[frameKey];
-				const bitmap = await createImageBitmap(
-					spriteResource.bitmap,
-					frame.frame.x,
-					frame.frame.y,
-					frame.frame.w,
-					frame.frame.h
-				);
-				const frameSpriteResource = new SpriteResource();
-				frameSpriteResource.bitmap = bitmap;
-				this.frames[frameKey] = new Frame(frame.duration, frameSpriteResource);
-			})
-		);
+export class SpriteSheetResource {
+	static load(url: string, spriteUrl: string): Promise<SpriteSheetResource> {
+		return Resources.load(url, async () => {
+			const spriteResourcePromise = SpriteResource.load(spriteUrl);
+			const spriteSheetJson = await (await fetch(url)).json();
+			const spriteResource = await spriteResourcePromise;
+			const spriteSheet = SpriteSheetSchema.assert(spriteSheetJson);
+			const frames: Frames = {};
+			await Promise.all(
+				Object.keys(spriteSheet.frames).map(async (frameKey) => {
+					const frame = spriteSheet.frames[frameKey];
+					const bitmap = await createImageBitmap(
+						spriteResource.bitmap,
+						frame.frame.x,
+						frame.frame.y,
+						frame.frame.w,
+						frame.frame.h
+					);
+					const frameSpriteResource = new SpriteResource(bitmap);
+					frames[frameKey] = new Frame(frame.duration, frameSpriteResource);
+				})
+			);
+			return new SpriteSheetResource(frames);
+		});
 	}
+
+	constructor(readonly frames: Partial<Record<string, Frame>>) {}
 }

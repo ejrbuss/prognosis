@@ -1,12 +1,12 @@
 import { Color } from "../data/color.js";
-import { Inspector, propertiesOf } from "../inspector.js";
-import { Node } from "./node.js";
+import { icon, Node, variable } from "./node.js";
 
+@icon("square-outline")
 export class Rectangle extends Node {
-	rotation: number = 0;
-	width: number = 100;
-	height: number = 100;
-	color: Color = Color.Black;
+	@variable(Number) rotation: number = 0;
+	@variable(Number) width: number = 100;
+	@variable(Number) height: number = 100;
+	@variable(Color) color: Color = Color.Black;
 
 	render(context: CanvasRenderingContext2D) {
 		context.save();
@@ -16,17 +16,5 @@ export class Rectangle extends Node {
 		const h = this.height;
 		context.fillRect(-w / 2, -h / 2, w, h);
 		context.restore();
-	}
-
-	inspect(inspector: Inspector) {
-		const properties = propertiesOf(this);
-		inspector.inspectNumber(properties.rotation);
-		inspector.inspectNumber(properties.width);
-		inspector.inspectNumber(properties.height);
-		inspector.inspectColor(properties.color);
-	}
-
-	get icon(): string {
-		return "square-outline";
 	}
 }

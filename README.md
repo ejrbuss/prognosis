@@ -1,67 +1,62 @@
 # Prognosis
 
-## TODO List
- - Editor
-	- Reset button to return scene to normal
-	- Edits
-		- Modify tree via explorer
-		- Modify nodes via inspector
-		- Modify nodes via timeline
-		- Tree
-		- Gizmos/Toolbar
-			- Icon
-			- Select tool
-			- Move tool (move)
-			- Rotate tool
-			- Scale tool (resize)
-			- Play (play)
-			- Stop (stop)
-			- Reset (play-skip-back)
-		- Preview camera
-		- Debug render for selected entity (bounds, position, etc.)
-		- Save modifcations
-		- Save indicator in title
-		- Edit/Undo
-		- Copy/Paste
-		- Enable/Disable grid + grid size
-	- Resources
-		- Allow node trees to link to other node trees with url rather than name
-		- Show resources in resources tab (thumbnails would be great)
-		- File tree explorer (maybe we can generalize the tree view)
-		- Drag nodes into explorer to start editing
-		- New node tree button
- - Physics
-	- https://developer.ibm.com/tutorials/wa-build2dphysicsengine/
- - Nodes
-	- Audio Node
-		- Play and audio asset
-	- Emitter Node
-		- Particle types and parameters
-	- Timer Node
-		- Migrate timer to be a Node
-	- SpriteAnimation Node
-		- Specify a SpriteSheet and the keyframes, then your are done
-	- Button Node
-		- Provide a button surface
-		- Provides a clicked signal
-	- Trigger Node
-		- Provides an invisible collision surface
-		- Provides a triggered signal
-	- Animation Node
-		- Generic property animator that can be used with the timeline
-	- Tween Node
-		- Just a simplified Animation Node, that only has two key frames
-		- interpolates integer values
-	- Surface
-		- Add property clip: boolean
-		- If enabled render to offscreen canvas for proper clipping
-	- FxSurface
-		- Render to WebGL canvas (make this the root context)
-		- Load a single fragment shader - just edit this on a game by game basis
-		- Provide shader effects
-			- Chromatic Aberration
-			- HSL Slider
-			- Film Grain
-			- Vignette
- - Dynamic 2d Lighting
-	- https://slembcke.github.io/SuperFastHardShadows
+## NodeJS Setup
+
+Ensure you have NodeJS and NPM installed. The best way to manage your NodeJS
+installation is with [Node Version Manager](https://github.com/nvm-sh/nvm) (nvm).
+
+To install nvm run
+
+```sh
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+```
+
+Then use latest version of node and npm with
+
+```sh
+nvm use node
+```
+
+Verify with (should be >= v17.0.1)
+```sh
+node -v
+```
+
+## Project Setup
+
+**Note:** This setup process assumes you are using VS Code as your editor.
+
+In a directory of your choosing run
+
+```sh
+git clone https://github.com/ejrbuss/prognosis.git
+```
+
+Then open the directory in VS Code.
+
+Now install project dependencies with
+
+```sh
+npm install
+```
+
+Perform a first time build with
+
+```sh
+npm run build
+```
+
+The following are other useful commands
+
+```sh
+npm run test    # Run unit tests
+npm run clean   # Remove all build artifacts
+npm run serve   # Run a deve server (localhost:8080)
+npm run dev     # Run a deve server (localhost:8080) and watch for file updates
+npm run release # Create a release (release.zip)
+```
+
+## Code Formatting
+
+[Prettier](https://prettier.io/) is used for formatting code. If you are going
+to be contributing please install the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode).

@@ -179,7 +179,6 @@ const KeyboardClass = class Keyboard {
 		const pushEvent = (event: KeyboardEvent) => this.events.push(event);
 		Graphics.canvas.addEventListener("keydown", pushEvent);
 		Graphics.canvas.addEventListener("keyup", pushEvent);
-		Runtime.updates.connect(this.update.bind(this));
 	}
 
 	keyPressed(key: Key): boolean {

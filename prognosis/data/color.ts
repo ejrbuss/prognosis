@@ -1,5 +1,7 @@
 import "../math.js";
 import { Tweenable } from "../tween.js";
+import { Schema } from "./schema.js";
+import { JsonData } from "./store.js";
 
 export type RgbaProps = {
 	red: number;
@@ -52,6 +54,18 @@ export class Color implements Tweenable<Color> {
 	static Cyan = Color.cmyk(1, 0, 0, 0);
 	static Magenta = Color.cmyk(0, 1, 0, 0);
 	static Yellow = Color.cmyk(0, 0, 1, 0);
+
+	static copy(color: Color): Color {
+		return color;
+	}
+
+	static toStore(color: Color): JsonData {
+		return color.value;
+	}
+
+	static fromStore(data: JsonData): Color {
+		return new Color(Schema.number.assert(data));
+	}
 
 	static rgb255(red: number, green: number, blue: number): Color {
 		return Color.rgba255(red, green, blue, 1);
