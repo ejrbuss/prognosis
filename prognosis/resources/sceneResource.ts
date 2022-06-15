@@ -1,6 +1,6 @@
 import { Node } from "../nodes/node.js";
 import { Schema, SchemaType } from "../data/schema.js";
-import { Resources } from "./resources.js";
+import { Resource, Resources } from "./resources.js";
 import { JsonData } from "../data/store.js";
 
 const NodeDataSchema = Schema.object({
@@ -13,29 +13,34 @@ const NodeDataSchema = Schema.object({
 type NodeData = SchemaType<typeof NodeDataSchema>;
 
 export const SceneDataSchema = Schema.object({
-	rootNodes: Schema.array(Schema.number),
+	root: Schema.number,
 	nodeData: Schema.array(NodeDataSchema),
 });
 
 export type SceneData = SchemaType<typeof SceneDataSchema>;
 
-export class SceneResource {
+export class SceneResource implements Resource {
 	static toStore(scene: SceneResource): JsonData {
 		return scene.sceneData;
 	}
 
 	static fromStore(data: JsonData): SceneResource {
-		return new SceneResource(SceneDataSchema.assert(data));
+		return new SceneResource(undefined as any, SceneDataSchema.assert(data));
 	}
 
 	static load(url: string): Promise<SceneResource> {
-		return Resources.load(url, async () =>
-			SceneResource.fromStore(await (await fetch(url)).json())
+		return Resources.load(
+			url,
+			async () =>
+				new SceneResource(
+					url,
+					SceneDataSchema.assert(await (await fetch(url)).json())
+				)
 		);
 	}
 
-	static fromNodes(nodes: Node[]): SceneResource {
-		const sceneData: SceneData = { rootNodes: [], nodeData: [] };
+	static fromNode(node: Node): SceneResource {
+		const sceneData: SceneData = { root: 0, nodeData: [] };
 		function recurse(node: Node): number {
 			const metadata = Node.metadataFor(node);
 			const nodeData: NodeData = {
@@ -56,14 +61,14 @@ export class SceneResource {
 			nodeData.children = node.children.map(recurse);
 			return index;
 		}
-		sceneData.rootNodes = nodes.map(recurse);
-		return new SceneResource(sceneData);
+		sceneData.root = recurse(node);
+		return new SceneResource(undefined as any, sceneData);
 	}
 
-	constructor(readonly sceneData: SceneData) {}
+	constructor(readonly url: string, readonly sceneData: SceneData) {}
 
-	toNodes(): Node[] {
-		const recurse = (nodeIndex: number): Node => {
+	toNode(): Promise<Node> {
+		const recurse = async (nodeIndex: number): Promise<Node> => {
 			const nodeData = this.sceneData.nodeData[nodeIndex];
 			if (nodeData === undefined) {
 				throw new Error(`Scene refers to unknown Node at index: ${nodeIndex}!`);
@@ -77,11 +82,19 @@ export class SceneResource {
 			const node = new metadata.type(nodeData.name);
 			for (const name in nodeData.variables) {
 				const variable = metadata.variables[name];
-				(node as any)[name] = variable.fromStore(nodeData.variables[name]);
+				if (variable !== undefined) {
+					(node as any)[name] = await variable.fromStore(
+						nodeData.variables[name]
+					);
+				} else {
+					console.error(
+						new Error(`Node "${node.name}" has unknown variable "${name}"!'`)
+					);
+				}
 			}
-			nodeData.children.forEach((childIndex) => node.add(recurse(childIndex)));
+			node.addAll(await Promise.all(nodeData.children.map(recurse)));
 			return node;
 		};
-		return this.sceneData.rootNodes.map(recurse);
+		return recurse(this.sceneData.root);
 	}
 }

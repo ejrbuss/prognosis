@@ -1,8 +1,6 @@
 import { Schema } from "./data/schema.js";
 import { Node } from "./nodes/node.js";
 
-const IgnoredNodes = ["Root", "DebugRoot"];
-
 const ModulesSchema = Schema.array(Schema.string);
 const modulesJson = await (await fetch("/modules.json")).json();
 const modules = ModulesSchema.assert(modulesJson);
@@ -12,8 +10,7 @@ await Promise.all(
 		Object.values(exportedValues).forEach((value) => {
 			if (
 				typeof value === "function" &&
-				(Node.isPrototypeOf(value) || value === Node) &&
-				!IgnoredNodes.includes(value.name)
+				(Node.isPrototypeOf(value) || value === Node)
 			) {
 				const nodeConstructor = value as typeof Node;
 				const metadata = Node.metadataFor(nodeConstructor);

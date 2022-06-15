@@ -1,8 +1,4 @@
-import {
-	LayoutConstants,
-	LayoutConstraints,
-	EditorState,
-} from "./editorState.js";
+import { LayoutConstants, LayoutConstraints, Editor } from "./editor.js";
 import { Explorer } from "./explorer.js";
 import { Gutter } from "./gutter.js";
 import { useEventListener, useRerender, useSignal } from "./reactUtil.js";
@@ -11,16 +7,16 @@ import { Preview } from "./preview.js";
 import { Timeline } from "./timeline.js";
 import { Toolbar } from "./toolbar.js";
 
-export function Editor() {
+export function Layout() {
 	const rerender = useRerender();
-	useSignal(EditorState.updates);
+	useSignal(Editor.updates);
 	useEventListener(window, "resize", rerender);
 	useEventListener(window, "keydown", (event) => {
 		const keyEvent = event as KeyboardEvent;
 		// Redo
 		if (keyEvent.key === "z" && keyEvent.metaKey && keyEvent.shiftKey) {
-			if (EditorState.editable) {
-				EditorState.redo();
+			if (Editor.editable) {
+				Editor.redo();
 			}
 			keyEvent.stopPropagation();
 			keyEvent.preventDefault();
@@ -28,15 +24,15 @@ export function Editor() {
 		}
 		// Undo
 		if (keyEvent.key === "z" && keyEvent.metaKey) {
-			if (EditorState.editable) {
-				EditorState.undo();
+			if (Editor.editable) {
+				Editor.undo();
 			}
 			keyEvent.stopPropagation();
 			keyEvent.preventDefault();
 			return;
 		}
 	});
-	const layout = layoutSolver(EditorState.layoutConstraints);
+	const layout = layoutSolver(Editor.layoutConstraints);
 	return (
 		<div
 			className="editor"
@@ -57,12 +53,12 @@ export function Editor() {
 			}}
 		>
 			<Toolbar />
-			<Gutter vertical onDrag={(d) => EditorState.resizeInspector(d)} />
+			<Gutter vertical onDrag={(d) => Editor.resizeInspector(d)} />
 			<Inspector />
-			<Gutter vertical onDrag={(d) => EditorState.resizeExplorer(d)} />
+			<Gutter vertical onDrag={(d) => Editor.resizeExplorer(d)} />
 			<Explorer />
 			<Preview />
-			<Gutter horizontal onDrag={(d) => EditorState.resizeTimeline(d)} />
+			<Gutter horizontal onDrag={(d) => Editor.resizeTimeline(d)} />
 			<Timeline />
 		</div>
 	);

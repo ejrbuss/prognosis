@@ -1,12 +1,10 @@
 import { Node } from "../nodes/node.js";
-import { SceneResource } from "../resources/sceneResource.js";
 import { Runtime } from "../runtime.js";
 import { EditorApi } from "./editorApi.js";
-import { EditorState } from "./editorState.js";
+import { Editor } from "./editor.js";
 import { Empty } from "./empty.js";
 import { useInterval, classNames } from "./reactUtil.js";
 import { Icon } from "./icon.js";
-import { EditorRootState } from "../nodes/editorRoot.js";
 
 export function Explorer() {
 	useInterval(100);
@@ -42,7 +40,7 @@ export function Explorer() {
 						const files = event.target.files;
 						if (files !== null && files.length > 0) {
 							const sceneUrl = await EditorApi.getFileUrl(files[0]);
-							EditorState.loadScene(sceneUrl);
+							Editor.loadScene(sceneUrl);
 						}
 					}}
 				/>
@@ -51,20 +49,22 @@ export function Explorer() {
 					button
 					title="Add Node"
 					icon="add-outline"
-					disabled={EditorState.editable}
+					disabled={!Editor.editable}
 					onClick={() => {
-						const parent = EditorState.selectedNode ?? EditorState.editorRoot;
-						const child = new (Node.metadataFor(nodeType).type)();
-						EditorState.undoable({
-							action: () => {
-								parent.add(child);
-								EditorState.saveSceneChanges();
-							},
-							undoAction: () => {
-								parent.remove(child);
-								EditorState.saveSceneChanges();
-							},
-						});
+						const parent = Editor.selectedNode;
+						if (parent !== undefined) {
+							const child = new (Node.metadataFor(nodeType).type)();
+							Editor.undoable({
+								action: () => {
+									parent.add(child);
+									Editor.saveSceneChanges();
+								},
+								undoAction: () => {
+									parent.remove(child);
+									Editor.saveSceneChanges();
+								},
+							});
+						}
 					}}
 				/>
 				<select
@@ -89,8 +89,8 @@ export function Explorer() {
 					<Icon large className="input-icon" icon="search-outline" />
 				</div>
 			</div>
-			{EditorState.sceneLoaded ? (
-				<div className="nodes" onMouseDown={() => EditorState.selectNode()}>
+			{Editor.sceneLoaded ? (
+				<div className="nodes">
 					<NodeTree node={Runtime.root} depth={0} visibleNodes={visibleNodes} />
 				</div>
 			) : (
@@ -118,14 +118,14 @@ function NodeTree({ node, depth, visibleNodes }: NodeTreeProps) {
 	if (!visibleNodes.has(node)) {
 		return <React.Fragment />;
 	}
-	const selected = EditorState.selectedNode === node;
-	const expanded = EditorState.nodeExpanded(node);
+	const selected = Editor.selectedNode === node;
+	const expanded = Editor.nodeExpanded(node);
 	const expandIcon = expanded
 		? "chevron-down-outline"
 		: "chevron-forward-outline";
 	return (
 		<ul
-			draggable={EditorState.editorRootState == EditorRootState.Editing}
+			draggable={Editor.editable}
 			onDragStart={() => setDragging(true)}
 			onDragEnd={() => setDragging(false)}
 		>
@@ -138,85 +138,44 @@ function NodeTree({ node, depth, visibleNodes }: NodeTreeProps) {
 				}}
 				onDrop={() => {
 					setOver(false);
-					const child = EditorState.selectedNode;
+					const child = Editor.selectedNode;
 					const undoNode = child?.parent;
-					if (child !== undefined && !child.path.startsWith(node.path)) {
-						EditorState.undoable({
+					if (child !== undefined && !node.path.startsWith(child.path)) {
+						Editor.undoable({
 							action: () => {
 								node.add(child);
-								EditorState.saveSceneChanges();
+								Editor.saveSceneChanges();
 							},
 							undoAction: () => {
 								undoNode?.add(child);
-								EditorState.saveSceneChanges();
+								Editor.saveSceneChanges();
 							},
 						});
 					}
 				}}
 				onMouseDown={(event) => {
 					if (selected) {
-						EditorState.toggleNodeExpanded(node);
+						Editor.toggleNodeExpanded(node);
 					} else {
-						EditorState.selectNode(node);
+						Editor.selectNode(node);
 					}
 					event.stopPropagation();
 				}}
 				onKeyDown={async (event) => {
-					if (EditorState.editable) {
+					if (!Editor.editable) {
 						return;
 					}
 					if (event.key === "c" && event.metaKey) {
-						const scene = SceneResource.fromNodes([node]);
-						const storeableScene = SceneResource.toStore(scene);
-						navigator.clipboard.writeText(JSON.stringify(storeableScene));
+						Editor.copyNode(node);
 					}
 					if (event.key === "x" && event.metaKey) {
-						const parent = node.parent;
-						const scene = SceneResource.fromNodes([node]);
-						const storeableScene = SceneResource.toStore(scene);
-						navigator.clipboard.writeText(JSON.stringify(storeableScene));
-						EditorState.undoable({
-							action: () => {
-								parent?.remove(node);
-								EditorState.saveSceneChanges();
-							},
-							undoAction: () => {
-								parent?.add(node);
-								EditorState.saveSceneChanges();
-							},
-						});
+						Editor.cutNode(node);
 					}
 					if (event.key === "v" && event.metaKey) {
-						const storeableScene = JSON.parse(
-							await navigator.clipboard.readText()
-						);
-						const scene = SceneResource.fromStore(storeableScene);
-						const nodes = scene.toNodes();
-						EditorState.undoable({
-							action: () => {
-								node.addAll(nodes);
-								EditorState.saveSceneChanges();
-							},
-							undoAction: () => {
-								node.removeAll(nodes);
-								EditorState.saveSceneChanges();
-							},
-						});
+						Editor.pasteNode(node);
 					}
 					if (event.key === "Backspace") {
-						const parent = node.parent;
-						EditorState.undoable({
-							action: () => {
-								parent?.remove(node);
-								EditorState.selectNode();
-								EditorState.saveSceneChanges();
-							},
-							undoAction: () => {
-								parent?.add(node);
-								EditorState.selectNode(node);
-								EditorState.saveSceneChanges();
-							},
-						});
+						Editor.removeNode(node);
 					}
 				}}
 				className={classNames("node", { selected, dragging, over })}

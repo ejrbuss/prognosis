@@ -1,3 +1,7 @@
+export interface Resource {
+	url: string;
+}
+
 const ResourcesClass = class Resources {
 	#loadingCount: number = 0;
 	#pool: Record<string, Promise<any>> = {};
@@ -10,7 +14,7 @@ const ResourcesClass = class Resources {
 		return this.#loadingCount > 0;
 	}
 
-	async load<ResourceType>(
+	async load<ResourceType extends Resource>(
 		url: string,
 		thunk: () => Promise<ResourceType>
 	): Promise<ResourceType> {

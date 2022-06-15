@@ -9,7 +9,7 @@
     "build": "npx tsc && node ./dist/prognosis/dev/build.js",
     "serve": "npm run build && node ./dist/prognosis/dev/serve.js",
     "dev": "npm run build && node ./dist/prognosis/dev/watch.js",
-    "release": "npm run build && zip -r release.zip -x *.js.map -x *.tsbuildinfo -x **/prognosis/dev/*"
+    "release": "npm run build && zip -r release.zip -x *.js.map -x *.tsbuildinfo -x **/prognosis/dev/* -x **/prognosis/editor/*"
   },
   "repository": {
     "type": "git",

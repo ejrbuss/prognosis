@@ -26,10 +26,10 @@
 		// Load project files
 		await import("/prognosis/load.js");
 
-		const { Editor } = await import("/prognosis/editor/editor.js");
+		const { Layout } = await import("/prognosis/editor/layout.js");
 
 		// Start the editor
-		ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Editor, null));
+		ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Layout, null));
 
 		window.Prognosis = { Runtime };
 	</script>

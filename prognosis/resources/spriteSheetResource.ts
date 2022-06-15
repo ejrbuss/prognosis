@@ -43,13 +43,16 @@ export class SpriteSheetResource {
 						frame.frame.w,
 						frame.frame.h
 					);
-					const frameSpriteResource = new SpriteResource(bitmap);
+					const frameSpriteResource = new SpriteResource(spriteUrl, bitmap);
 					frames[frameKey] = new Frame(frameSpriteResource, frame.duration);
 				})
 			);
-			return new SpriteSheetResource(frames);
+			return new SpriteSheetResource(url, frames);
 		});
 	}
 
-	constructor(readonly frames: Partial<Record<string, Frame>>) {}
+	constructor(
+		readonly url: string,
+		readonly frames: Partial<Record<string, Frame>>
+	) {}
 }

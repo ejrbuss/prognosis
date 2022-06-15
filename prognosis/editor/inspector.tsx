@@ -10,10 +10,11 @@ import {
 	Variable,
 } from "../nodes/node.js";
 import { EditorApi } from "./editorApi.js";
-import { EditorState } from "./editorState.js";
+import { Editor } from "./editor.js";
 import { Empty } from "./empty.js";
 import { useInterval, useRerender } from "./reactUtil.js";
 import { Icon } from "./icon.js";
+import { SpriteResource } from "../resources/spriteResource.js";
 
 type InspectorState = {
 	node: Node | undefined;
@@ -25,8 +26,6 @@ const NodeVariableNames = ["x", "y", "z", "priority"];
 
 export function Inspector() {
 	useInterval(100);
-	const [nodeName, setNodeName] = React.useState("");
-	const [focus, setFocus] = React.useState(false);
 	const [state, setState] = React.useState({
 		node: undefined,
 		nodeComponents: [],
@@ -34,9 +33,9 @@ export function Inspector() {
 	} as InspectorState);
 
 	// Sync with editorState
-	if (state.node !== EditorState.selectedNode) {
+	if (state.node !== Editor.selectedNode) {
 		const newState: InspectorState = {
-			node: EditorState.selectedNode,
+			node: Editor.selectedNode,
 			nodeComponents: [],
 			typeComponents: [],
 		};
@@ -69,14 +68,14 @@ export function Inspector() {
 							onFocus={() => (focusValue.current = value)}
 							onBlur={() => {
 								const undoValue = focusValue.current;
-								EditorState.undoable({
+								Editor.undoable({
 									action: () => {
 										setValue(value);
-										EditorState.saveSceneChanges();
+										Editor.saveSceneChanges();
 									},
 									undoAction: () => {
 										setValue(undoValue);
-										EditorState.saveSceneChanges();
+										Editor.saveSceneChanges();
 									},
 								});
 							}}
@@ -91,64 +90,16 @@ export function Inspector() {
 					newState.typeComponents.push(Component);
 				}
 			}
-			setNodeName(node.name);
 		}
 		setState(newState);
 	}
 	const node = state.node;
 	if (node !== undefined) {
-		const metadata = Node.metadataFor(node);
 		return (
 			<div className="inspector" style={{ gridRow: "span 4" }}>
 				<h1>INSPSECTOR</h1>
 				<React.Fragment>
-					<div className="row">
-						<Icon
-							className="node-icon"
-							large
-							button
-							icon={metadata.icon}
-							onClick={() => EditorApi.openFileUrl(metadata.modulePath)}
-						/>
-						<input
-							className="node-name"
-							value={focus ? nodeName : node.name}
-							onChange={(event) => setNodeName(event.target.value)}
-							onFocus={() => {
-								setNodeName(node.name);
-								setFocus(true);
-							}}
-							onKeyDown={(event) => {
-								if (event.key === "Enter") {
-									const undoNodeName = node.name;
-									EditorState.undoable({
-										action: () => {
-											node.name = nodeName;
-											EditorState.saveSceneChanges();
-										},
-										undoAction: () => {
-											node.name = undoNodeName;
-											EditorState.saveSceneChanges();
-										},
-									});
-								}
-							}}
-							onBlur={() => {
-								const undoNodeName = node.name;
-								EditorState.undoable({
-									action: () => {
-										node.name = nodeName;
-										EditorState.saveSceneChanges();
-									},
-									undoAction: () => {
-										node.name = undoNodeName;
-										EditorState.saveSceneChanges();
-									},
-								});
-								setFocus(false);
-							}}
-						/>
-					</div>
+					<NodeTitle node={node} />
 					<h2>Node Varaibles</h2>
 					{state.nodeComponents.map((Component, index) => (
 						<Component key={index} />
@@ -168,6 +119,55 @@ export function Inspector() {
 			</div>
 		);
 	}
+}
+
+type NodeTitleProps = {
+	node: Node;
+};
+
+function NodeTitle({ node }: NodeTitleProps) {
+	const focusValue = React.useRef(node.name);
+	const [nodeName, setNodeName] = React.useState("");
+	const [focus, setFocus] = React.useState(false);
+	const metadata = Node.metadataFor(node);
+	return (
+		<div className="row">
+			<Icon
+				className="node-icon"
+				large
+				button
+				icon={metadata.icon}
+				onClick={() => EditorApi.openFileUrl(metadata.modulePath)}
+			/>
+			<input
+				className="node-name"
+				value={focus ? nodeName : node.name}
+				onChange={(event) => {
+					node.name = event.target.value;
+					setNodeName(event.target.value);
+				}}
+				onFocus={() => {
+					setNodeName(node.name);
+					focusValue.current = node.name;
+					setFocus(true);
+				}}
+				onBlur={() => {
+					const undoNodeName = focusValue.current;
+					Editor.undoable({
+						action: () => {
+							node.name = nodeName;
+							Editor.saveSceneChanges();
+						},
+						undoAction: () => {
+							node.name = undoNodeName;
+							Editor.saveSceneChanges();
+						},
+					});
+					setFocus(false);
+				}}
+			/>
+		</div>
+	);
 }
 
 type VariableInspectorProps<Type> = {
@@ -194,7 +194,7 @@ function InspectBoolean({
 					medium
 					icon="ellipse"
 					className="checkbox"
-					disabled={!EditorState.editable}
+					disabled={!Editor.editable}
 					selected={value}
 					onClick={() => setValue(!value)}
 				/>
@@ -216,7 +216,7 @@ function InspectNumber({
 			<div className="property-value">
 				<input
 					type="number"
-					disabled={!EditorState.editable}
+					disabled={!Editor.editable}
 					value={focused ? valueRef.current : value}
 					onChange={(event) => {
 						valueRef.current = event.target.value;
@@ -246,7 +246,7 @@ function InspectString({
 			<div className="property-value">
 				<input
 					type="text"
-					disabled={!EditorState.editable}
+					disabled={!Editor.editable}
 					value={value}
 					onChange={(event) => setValue(event.target.value)}
 				/>
@@ -262,7 +262,7 @@ function InspectEnum<Enum>(variable: EnumVariable<Enum>) {
 				<div className="property-name">{name}</div>
 				<div className="property-value">
 					<select
-						disabled={!EditorState.editable}
+						disabled={!Editor.editable}
 						value={variable.keyOf(value)}
 						onChange={(event) => setValue(variable.valueOf(event.target.value))}
 					>
@@ -304,7 +304,7 @@ function InspectColor({
 							className="hidden"
 							type="color"
 							ref={colorRef}
-							disabled={!EditorState.editable}
+							disabled={!Editor.editable}
 							value={value.hex.substring(0, 7)}
 							onChange={(event) => {
 								const hex = parseInt(event.target.value.substring(1), 0x10);
@@ -322,7 +322,7 @@ function InspectColor({
 						min={0}
 						max={1}
 						step={1 / 255}
-						disabled={!EditorState.editable}
+						disabled={!Editor.editable}
 						value={value.alpha}
 						onChange={(event) =>
 							setValue(value.with({ alpha: event.target.valueAsNumber }))
@@ -386,6 +386,31 @@ function InspectCamera({
 	);
 }
 
+function InspectSpriteResource({
+	name,
+	value,
+	setValue,
+}: VariableInspectorProps<SpriteResource>) {
+	return (
+		<div className="property">
+			<div className="property-name">{name}</div>
+			<div className="property-value">
+				<input
+					type="file"
+					disabled={!Editor.editable}
+					onChange={async (event) => {
+						const files = event.target.files;
+						if (files !== null && files.length > 0) {
+							const url = await EditorApi.getFileUrl(files[0]);
+							const spriteResource = await SpriteResource.load(url);
+							setValue(spriteResource);
+						}
+					}}
+				/>
+			</div>
+		</div>
+	);
+}
 const VariableInspectorFor = new Map<Variable<any>, VariableInspector<any>>([
 	[BooleanVariable, InspectBoolean],
 	[NumberVariable, InspectNumber],
@@ -393,4 +418,5 @@ const VariableInspectorFor = new Map<Variable<any>, VariableInspector<any>>([
 	[Point, InspectPoint],
 	[Color, InspectColor],
 	[Camera, InspectCamera],
+	[SpriteResource, InspectSpriteResource],
 ]);

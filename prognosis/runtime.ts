@@ -1,6 +1,5 @@
 import { Graphics } from "./graphics.js";
-import { Node } from "./nodes/node.js";
-import { Project } from "./project.js";
+import { DebugOptions, Node, Tool } from "./nodes/node.js";
 import { Keyboard } from "./keyboard.js";
 import { Mouse } from "./mouse.js";
 import { Root } from "./nodes/root.js";
@@ -10,6 +9,13 @@ const RuntimeClass = class Runtime {
 	#dt: number = 0;
 	root: Root = new Root();
 	timeScale: number = 1;
+
+	debug: boolean = false;
+	debugOptions: DebugOptions = {
+		selectedTool: Tool.Translate,
+		lockToGrid: false,
+		gridSize: 100,
+	};
 
 	get now(): number {
 		return this.#now;
@@ -38,7 +44,6 @@ const RuntimeClass = class Runtime {
 		Keyboard.start();
 		Mouse.start();
 		this.#now = performance.now() / 1000;
-		this.root._start();
 		requestAnimationFrame(() => this.loop());
 	}
 
@@ -48,8 +53,13 @@ const RuntimeClass = class Runtime {
 		this.#now = newNow;
 		Keyboard.update();
 		Mouse.update();
-		this.root._update();
-		this.root._render(Graphics.context);
+		if (this.debug) {
+			this.root._debugUpdate(this.debugOptions);
+			this.root._debugRender(Graphics.context, this.debugOptions);
+		} else {
+			this.root._update();
+			this.root._render(Graphics.context);
+		}
 		requestAnimationFrame(() => this.loop());
 	}
 };

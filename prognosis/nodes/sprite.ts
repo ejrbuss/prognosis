@@ -7,7 +7,7 @@ export class Sprite extends Node {
 	@variable(Point) origin: Point = Point.Origin;
 	@variable(Point) scale: Point = new Point(1, 1);
 	@variable(Number) rotation: number = 0;
-	spriteResource?: SpriteResource; // TODO @variable(SpriteResource)
+	@variable(SpriteResource) spriteResource?: SpriteResource; // TODO @variable(SpriteResource)
 
 	get width(): number {
 		const bitmap = this.spriteResource?.bitmap;

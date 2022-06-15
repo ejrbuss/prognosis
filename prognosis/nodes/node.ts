@@ -2,10 +2,23 @@ import { Point } from "../data/point.js";
 import { Schema } from "../data/schema.js";
 import { JsonData } from "../data/store.js";
 
+export enum Tool {
+	Translate = "Translation",
+	Scale = "Scale",
+	Rotate = "Rotate",
+}
+
+export type DebugOptions = {
+	selectedNode?: Node;
+	selectedTool: Tool;
+	lockToGrid: boolean;
+	gridSize: number;
+};
+
 export interface Variable<Type> {
 	copy(value: Type): Type;
 	toStore(value: Type): JsonData;
-	fromStore(data: JsonData): Type;
+	fromStore(data: JsonData): Type | Promise<Type>;
 }
 
 export class BooleanVariable {
@@ -144,7 +157,6 @@ export class Node {
 	}
 
 	#name: string;
-	#started: boolean = false;
 	#parent?: Node;
 	#children: Node[] = [];
 	localX: number = 0;
@@ -176,10 +188,6 @@ export class Node {
 		return `${this.#parent?.path ?? ""}${this.name}/`;
 	}
 
-	get started(): boolean {
-		return this.#started;
-	}
-
 	get parent(): Node | undefined {
 		return this.#parent;
 	}
@@ -193,7 +201,6 @@ export class Node {
 	}
 
 	set x(x: number) {
-		throw new Error("Stahp");
 		this.localX = x - (this.#parent?.x ?? 0);
 	}
 
@@ -248,9 +255,6 @@ export class Node {
 		}
 		node.#parent = this;
 		this.#children.push(node);
-		if (this.#started && !node.#started) {
-			node._start();
-		}
 		if (this.childrenChanged !== undefined) {
 			this.childrenChanged();
 		}
@@ -301,34 +305,13 @@ export class Node {
 
 	// Lifecycle methods
 
-	_start() {
-		if (this.#started) {
-			throw new Error("This Node was already started!");
-		}
-		this.#started = true;
-		if (this.start !== undefined) {
-			this.start();
-		}
-		this.#children.forEach((child) => child._start());
-	}
-
 	_update() {
-		const preUpdate: Node[] = [];
-		const postUpdate: Node[] = [];
-		this.#children.forEach((child) => {
-			if (child.priority > this.priority) {
-				preUpdate.push(child);
-			} else {
-				postUpdate.push(child);
-			}
-		});
-		preUpdate.sort((a, b) => b.priority - a.priority);
-		postUpdate.sort((a, b) => b.priority - a.priority);
-		preUpdate.forEach((child) => child._update());
 		if (this.update !== undefined) {
 			this.update();
 		}
-		postUpdate.forEach((child) => child._update());
+		this.children
+			.sort((a, b) => b.priority - a.priority)
+			.forEach((child) => child._update());
 	}
 
 	_render(context: CanvasRenderingContext2D) {
@@ -355,32 +338,21 @@ export class Node {
 	// Runtime hooks
 
 	childrenChanged?(): void;
-	start?(): void;
 	update?(): void;
 	render?(context: CanvasRenderingContext2D): void;
 
 	// Debug lifecycle methods
 
-	_editorUpdate() {
-		const preUpdate: Node[] = [];
-		const postUpdate: Node[] = [];
-		this.#children.forEach((child) => {
-			if (child.priority > this.priority) {
-				preUpdate.push(child);
-			} else {
-				postUpdate.push(child);
-			}
-		});
-		preUpdate.sort((a, b) => b.priority - a.priority);
-		postUpdate.sort((a, b) => b.priority - a.priority);
-		preUpdate.forEach((child) => child._editorUpdate());
+	_debugUpdate(debugProps: DebugOptions) {
 		if (this.debugUpdate !== undefined) {
-			this.debugUpdate();
+			this.debugUpdate(debugProps);
 		}
-		postUpdate.forEach((child) => child._editorUpdate());
+		this.children
+			.sort((a, b) => b.priority - a.priority)
+			.forEach((child) => child._debugUpdate(debugProps));
 	}
 
-	_editorRender(context: CanvasRenderingContext2D) {
+	_debugRender(context: CanvasRenderingContext2D, debugProps: DebugOptions) {
 		const preRender: Node[] = [];
 		const postRender: Node[] = [];
 		this.#children.forEach((child) => {
@@ -393,20 +365,23 @@ export class Node {
 		preRender.sort((a, b) => a.z - b.z);
 		postRender.sort((a, b) => a.z - b.z);
 		context.translate(this.localX, this.localY);
-		preRender.forEach((child) => child._editorRender(context));
+		preRender.forEach((child) => child._debugRender(context, debugProps));
 		if (this.debugRender !== undefined) {
-			this.debugRender(context);
+			this.debugRender(context, debugProps);
 		} else if (this.render !== undefined) {
 			this.render(context);
 		}
-		postRender.forEach((child) => child._editorRender(context));
+		postRender.forEach((child) => child._debugRender(context, debugProps));
 		context.translate(-this.localX, -this.localY);
 	}
 
 	// Debug hooks
 
-	debugUpdate?(): void;
-	debugRender?(context: CanvasRenderingContext2D): void;
+	debugUpdate?(debugProps: DebugOptions): void;
+	debugRender?(
+		context: CanvasRenderingContext2D,
+		debugProps: DebugOptions
+	): void;
 }
 
 // TODO better home?

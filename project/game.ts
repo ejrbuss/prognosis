@@ -1,5 +1,5 @@
 import { Color } from "../prognosis/data/color.js";
-import { SpriteAnimation } from "../prognosis/nodes/animation.js";
+import { SpriteAnimation } from "../prognosis/nodes/spriteAnimation.js";
 import { icon, Node, variable } from "../prognosis/nodes/node.js";
 import { Random } from "../prognosis/random.js";
 import { SpriteSheetResource } from "../prognosis/resources/spriteSheetResource.js";
@@ -7,7 +7,6 @@ import { Player } from "./player.js";
 
 @icon("game-controller-outline")
 export class Game extends Node {
-	@variable(Color) color: Color = Color.Red;
 	player?: Player;
 
 	async start() {

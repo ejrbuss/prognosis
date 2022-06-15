@@ -1,12 +1,11 @@
 import { Store } from "../data/store.js";
-import { Node } from "../nodes/node.js";
-import { Project } from "../project.js";
+import { Node, Tool } from "../nodes/node.js";
 import { SceneResource } from "../resources/sceneResource.js";
 import { Runtime } from "../runtime.js";
 import { Signal } from "../signal.js";
 import { EditorApi } from "./editorApi.js";
-import { EditorRoot, EditorRootState } from "../nodes/editorRoot.js";
 import { Root } from "../nodes/root.js";
+import { Project } from "../project.js";
 
 const MaxHistorySize = 1000;
 
@@ -14,12 +13,6 @@ type UndoableAction = {
 	action: () => void;
 	undoAction: () => void;
 };
-
-export enum Tool {
-	Translate = "Translation",
-	Scale = "Scale",
-	Rotate = "Rotate",
-}
 
 export const LayoutConstants = {
 	GutterSize: 1,
@@ -45,11 +38,10 @@ type EditorStore = Store<{
 	gridSize: number;
 }>;
 
-const EditorStateClass = class EditorState {
+const EditorClass = class Editor {
 	#store: EditorStore;
 	#history: UndoableAction[] = [];
 	#historyLocation: number = 0;
-	#editorRoot: EditorRoot = new EditorRoot("Root");
 	#layoutConstraints: LayoutConstraints = {
 		desiredInspectorWidth: 300,
 		desiredExplorerWidth: 300,
@@ -57,39 +49,31 @@ const EditorStateClass = class EditorState {
 	};
 	#sceneUrl?: string;
 	#scene?: SceneResource;
-	#selectedNode?: Node;
 	#expandedNodes: Map<Node, boolean> = new Map();
-	#selectedTool: Tool = Tool.Translate;
+	#editable: boolean = true;
 	#lockGrid: boolean = false;
 
 	updates: Signal = new Signal();
 
 	constructor() {
-		this.#editorRoot.cameraSpeed = Project.graphics.width / 3;
-		this.#editorRoot.gridSize = 100;
 		this.#store = new Store("prognosis.editor.store", {
 			layoutConstraints: this.#layoutConstraints,
 			expandedNodePaths: [],
-			gridSize: this.#editorRoot.gridSize,
+			gridSize: 100,
 		});
 		this.updates.connect(() => {
 			this.#store.value = {
 				layoutConstraints: this.#layoutConstraints,
 				sceneUrl: this.#sceneUrl,
-				selectedNodePath: this.#selectedNode?.path,
+				selectedNodePath: Runtime.debugOptions.selectedNode?.path,
 				expandedNodePaths: Array.from(this.#expandedNodes).map(
 					([node, expanded]) => [node.path, expanded]
 				),
-				gridSize: this.#editorRoot.gridSize,
+				gridSize: Runtime.debugOptions.gridSize,
 			};
 			this.#store.save();
 		});
-		Runtime.root = this.#editorRoot;
 		this.load().then(() => setTimeout(() => Runtime.start()));
-	}
-
-	get editorRoot(): Node {
-		return this.#editorRoot;
 	}
 
 	get layoutConstraints(): LayoutConstraints {
@@ -100,45 +84,44 @@ const EditorStateClass = class EditorState {
 		return this.#scene !== undefined;
 	}
 
+	get editable(): boolean {
+		return this.#editable;
+	}
+
+	get debug(): boolean {
+		return Runtime.debug;
+	}
+
+	get selectedTool(): Tool {
+		return Runtime.debugOptions.selectedTool;
+	}
+
 	get selectedNode(): Node | undefined {
-		return this.#selectedNode;
+		return Runtime.debugOptions.selectedNode;
+	}
+
+	get lockToGrid(): boolean {
+		return Runtime.debugOptions.lockToGrid;
 	}
 
 	nodeExpanded(node: Node): boolean {
 		return this.#expandedNodes.get(node) ?? false;
 	}
 
-	get selectedTool(): Tool {
-		return this.#selectedTool;
-	}
-
-	get lockGrid(): boolean {
-		return this.#lockGrid;
-	}
-
 	get showGrid(): boolean {
-		return this.#editorRoot.showGrid;
+		return Runtime.root.debugShowGrid;
 	}
 
 	get gridSize(): number {
-		return this.#editorRoot.gridSize;
-	}
-
-	get editable(): boolean {
-		return (
-			this.sceneLoaded && this.#editorRoot.state === EditorRootState.Editing
-		);
-	}
-
-	get editorRootState(): EditorRootState {
-		return this.#editorRoot.state;
+		return Runtime.debugOptions.gridSize;
 	}
 
 	async load() {
 		const store = this.#store.value;
 		this.#layoutConstraints = store.layoutConstraints;
 		this.#sceneUrl = store.sceneUrl;
-		this.#editorRoot.gridSize = store.gridSize;
+		Runtime.debugOptions.gridSize = store.gridSize;
+		Runtime.root.debugCameraSpeed = Project.graphics.width / 3;
 		if (store.sceneUrl !== undefined) {
 			this.#scene = await SceneResource.load(store.sceneUrl);
 			this.reset();
@@ -146,8 +129,8 @@ const EditorStateClass = class EditorState {
 	}
 
 	saveSceneChanges() {
-		if (this.editorRootState === EditorRootState.Editing && this.#sceneUrl) {
-			this.#scene = SceneResource.fromNodes(this.#editorRoot.children);
+		if (this.editable && this.#sceneUrl !== undefined) {
+			this.#scene = SceneResource.fromNode(Runtime.root);
 			EditorApi.save(this.#sceneUrl, SceneResource.toStore(this.#scene));
 		}
 	}
@@ -216,19 +199,16 @@ const EditorStateClass = class EditorState {
 
 	async loadScene(sceneUrl: string) {
 		const scene = await SceneResource.load(sceneUrl);
+		Runtime.debugOptions.selectedNode = undefined;
 		this.#history = [];
-		this.#sceneUrl = sceneUrl;
-		this.#selectedNode = undefined;
 		this.#expandedNodes.clear();
+		this.#sceneUrl = sceneUrl;
 		this.#scene = scene;
 		this.reset();
 	}
 
 	selectNode(node?: Node) {
-		if (this.#selectedNode === node) {
-			return;
-		}
-		this.#selectedNode = node;
+		Runtime.debugOptions.selectedNode = node;
 		this.updates.send();
 	}
 
@@ -238,50 +218,58 @@ const EditorStateClass = class EditorState {
 	}
 
 	selectTool(tool: Tool) {
-		this.#selectedTool = tool;
+		Runtime.debugOptions.selectedTool = tool;
 		this.updates.send();
 	}
 
-	toggleLockGrid() {
-		this.#lockGrid = !this.lockGrid;
+	toggleLockToGrid() {
+		Runtime.debugOptions.lockToGrid = !Runtime.debugOptions.lockToGrid;
 		this.updates.send();
 	}
 
 	toggleShowGrid() {
-		this.#editorRoot.showGrid = !this.showGrid;
+		Runtime.root.debugShowGrid = !Runtime.root.debugShowGrid;
 		this.updates.send();
 	}
 
 	resizeGrid(gridSize: number) {
-		if (this.#editorRoot.gridSize === gridSize) {
-			return;
-		}
-		this.#editorRoot.gridSize = gridSize;
+		Runtime.debugOptions.gridSize = gridSize;
 		this.updates.send();
 	}
 
 	play() {
-		this.#scene = SceneResource.fromNodes(this.#editorRoot.children);
-		this.#editorRoot.state = EditorRootState.Running;
+		this.#scene = SceneResource.fromNode(Runtime.root);
+		this.#editable = false;
+		Runtime.debug = false;
 		this.updates.send();
 	}
 
 	stop() {
-		this.#editorRoot.state = EditorRootState.Stopped;
+		Runtime.debug = true;
+		this.updates.send();
 	}
 
-	reset() {
-		Runtime.root = this.#editorRoot = new EditorRoot("Root");
-		this.#selectedNode = undefined;
+	async reset() {
+		Runtime.root.removeAll();
+		Runtime.debug = true;
+		Runtime.debugOptions.selectedNode = undefined;
 		this.#expandedNodes.clear();
+		this.#editable = true;
+		const oldRoot = Runtime.root;
 		if (this.#scene !== undefined) {
-			this.#editorRoot.addAll(this.#scene.toNodes());
+			Runtime.root = (await this.#scene.toNode()) as Root;
+			// Copy over old root data
+			Runtime.root.debugCamera = oldRoot.debugCamera;
+			Runtime.root.debugCameraSpeed = oldRoot.debugCameraSpeed;
+			Runtime.root.debugGridColor = oldRoot.debugGridColor;
+			Runtime.root.debugShowGrid = oldRoot.debugShowGrid;
 			const store = this.#store.value;
 			if (store.selectedNodePath !== undefined) {
-				this.#selectedNode = Runtime.findByPath(store.selectedNodePath);
+				Runtime.debugOptions.selectedNode = Runtime.findByPath(
+					store.selectedNodePath
+				);
 			}
 			for (const [path, expanded] of store.expandedNodePaths) {
-				console.log(path);
 				const node = Runtime.findByPath(path);
 				if (node !== undefined) {
 					this.#expandedNodes.set(node, expanded);
@@ -290,6 +278,50 @@ const EditorStateClass = class EditorState {
 		}
 		this.updates.send();
 	}
+
+	copyNode(node: Node) {
+		const scene = SceneResource.fromNode(node);
+		const storeableScene = SceneResource.toStore(scene);
+		navigator.clipboard.writeText(JSON.stringify(storeableScene));
+	}
+
+	removeNode(node: Node) {
+		console.log("here!");
+		const parent = node.parent;
+		if (parent !== undefined) {
+			this.undoable({
+				action: () => {
+					parent.remove(node);
+					this.saveSceneChanges();
+				},
+				undoAction: () => {
+					parent.add(node);
+					this.saveSceneChanges();
+				},
+			});
+		}
+	}
+
+	cutNode(node: Node) {
+		this.copyNode(node);
+		this.removeNode(node);
+	}
+
+	async pasteNode(parent: Node) {
+		const storeableScene = JSON.parse(await navigator.clipboard.readText());
+		const scene = SceneResource.fromStore(storeableScene);
+		const node = await scene.toNode();
+		this.undoable({
+			action: () => {
+				parent.add(node);
+				this.saveSceneChanges();
+			},
+			undoAction: () => {
+				parent.add(node);
+				this.saveSceneChanges();
+			},
+		});
+	}
 };
 
-export const EditorState = new EditorStateClass();
+export const Editor = new EditorClass();

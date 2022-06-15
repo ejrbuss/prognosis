@@ -1,5 +1,5 @@
-import { EditorRootState } from "../nodes/editorRoot.js";
-import { EditorState, Tool } from "./editorState.js";
+import { Tool } from "../nodes/node.js";
+import { Editor } from "./editor.js";
 import { Icon } from "./icon.js";
 
 export function Toolbar() {
@@ -8,24 +8,24 @@ export function Toolbar() {
 			<Icon
 				button
 				large
-				selected={EditorState.selectedTool === Tool.Translate}
-				onClick={() => EditorState.selectTool(Tool.Translate)}
+				selected={Editor.selectedTool === Tool.Translate}
+				onClick={() => Editor.selectTool(Tool.Translate)}
 				title="Translate"
 				icon="move-outline"
 			/>
 			<Icon
 				button
 				large
-				selected={EditorState.selectedTool === Tool.Scale}
-				onClick={() => EditorState.selectTool(Tool.Scale)}
+				selected={Editor.selectedTool === Tool.Scale}
+				onClick={() => Editor.selectTool(Tool.Scale)}
 				title="Scale"
 				icon="resize-outline"
 			/>
 			<Icon
 				button
 				large
-				selected={EditorState.selectedTool === Tool.Rotate}
-				onClick={() => EditorState.selectTool(Tool.Rotate)}
+				selected={Editor.selectedTool === Tool.Rotate}
+				onClick={() => Editor.selectTool(Tool.Rotate)}
 				title="Rotate"
 				icon="refresh-outline"
 			/>
@@ -33,16 +33,16 @@ export function Toolbar() {
 			<Icon
 				button
 				large
-				selected={EditorState.lockGrid}
-				onClick={() => EditorState.toggleLockGrid()}
+				selected={Editor.lockToGrid}
+				onClick={() => Editor.toggleLockToGrid()}
 				title="Lock to Grid"
 				icon="lock-closed-outline"
 			/>
 			<Icon
 				button
 				large
-				selected={EditorState.showGrid}
-				onClick={() => EditorState.toggleShowGrid()}
+				selected={Editor.showGrid}
+				onClick={() => Editor.toggleShowGrid()}
 				title="Show Grid"
 				icon="grid-outline"
 			/>
@@ -50,38 +50,32 @@ export function Toolbar() {
 				className="grid-size"
 				type="number"
 				min={0}
-				value={EditorState.gridSize}
-				onChange={(event) => EditorState.resizeGrid(event.target.valueAsNumber)}
+				value={Editor.gridSize}
+				onChange={(event) => Editor.resizeGrid(event.target.valueAsNumber)}
 			/>
 			<span className="unit">px</span>
 			<div className="spacer" />
 			<Icon
 				button
 				large
-				disabled={
-					EditorState.editorRootState !== EditorRootState.Editing &&
-					EditorState.editorRootState !== EditorRootState.Stopped
-				}
-				onClick={() => EditorState.play()}
+				disabled={!Editor.debug}
+				onClick={() => Editor.play()}
 				title="Play"
 				icon="play-outline"
 			/>
 			<Icon
 				button
 				large
-				disabled={EditorState.editorRootState !== EditorRootState.Running}
-				onClick={() => EditorState.stop()}
+				disabled={Editor.editable || Editor.debug}
+				onClick={() => Editor.stop()}
 				title="Stop"
 				icon="stop-outline"
 			/>
 			<Icon
 				button
 				large
-				disabled={
-					EditorState.editorRootState !== EditorRootState.Running &&
-					EditorState.editorRootState !== EditorRootState.Stopped
-				}
-				onClick={() => EditorState.reset()}
+				disabled={Editor.editable}
+				onClick={() => Editor.reset()}
 				title="Reset"
 				icon="play-skip-back-outline"
 			/>
