@@ -11,8 +11,8 @@ export class Layer extends Node {
 		if (this.fixed) {
 			const camera = Runtime.root.camera;
 			context.rotate(-camera.rotation);
-			context.scale(-camera.zoom, -camera.zoom);
-			context.translate(-camera.x, -camera.y);
+			context.scale(1 / camera.zoom, 1 / camera.zoom);
+			context.translate(camera.x, camera.y);
 		}
 		context.translate(this.localX, this.localY);
 		render.forEach((child) => child._render(context));
@@ -25,8 +25,8 @@ export class Layer extends Node {
 		if (this.fixed) {
 			const camera = Runtime.root.camera;
 			context.rotate(-camera.rotation);
-			context.scale(-camera.zoom, -camera.zoom);
-			context.translate(-camera.x, -camera.y);
+			context.scale(1 / camera.zoom, 1 / camera.zoom);
+			context.translate(camera.x, camera.y);
 		}
 		context.translate(this.localX, this.localY);
 		render.forEach((child) => child._debugRender(context));

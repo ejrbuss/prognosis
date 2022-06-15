@@ -118,6 +118,21 @@ export function Inspector() {
 								setNodeName(node.name);
 								setFocus(true);
 							}}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") {
+									const undoNodeName = node.name;
+									EditorState.undoable({
+										action: () => {
+											node.name = nodeName;
+											EditorState.saveSceneChanges();
+										},
+										undoAction: () => {
+											node.name = undoNodeName;
+											EditorState.saveSceneChanges();
+										},
+									});
+								}
+							}}
 							onBlur={() => {
 								const undoNodeName = node.name;
 								EditorState.undoable({
@@ -178,6 +193,7 @@ function InspectBoolean({
 					button
 					medium
 					icon="ellipse"
+					className="checkbox"
 					disabled={EditorState.runtimeState !== RuntimeState.Editable}
 					selected={value}
 					onClick={() => setValue(!value)}

@@ -12,7 +12,7 @@
                 "y": 0,
                 "z": 100,
                 "priority": 0,
-                "fixed": false
+                "fixed": true
             },
             "children": [
                 1
@@ -41,16 +41,16 @@
                 "priority": 0,
                 "text": "Text",
                 "fontFamily": "monospace",
-                "fontSize": 12,
+                "fontSize": 24,
                 "fontStyle": "Normal",
                 "fontWeight": "Normal",
                 "alignment": "Left",
-                "color": -34127873
+                "color": 139252991
             },
             "children": []
         },
         {
-            "name": "Layer",
+            "name": "World",
             "type": "Layer",
             "variables": {
                 "x": 0,
@@ -69,12 +69,12 @@
             "variables": {
                 "x": 0,
                 "y": 0,
-                "z": 0,
+                "z": -1,
                 "priority": 0,
                 "rotation": 0,
                 "width": 1280,
                 "height": 720,
-                "color": 255
+                "color": 1273474047
             },
             "children": []
         }
