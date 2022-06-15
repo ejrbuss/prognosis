@@ -28,7 +28,7 @@ export class Point implements Tweenable<Point> {
 		return Point.Origin.with(PointPropsSchema.assert(data));
 	}
 
-	constructor(readonly x: number, readonly y: number) {}
+	constructor(readonly x: number, readonly y: number = x) {}
 
 	with(props: Partial<PointProps>): Point {
 		return new Point(props.x ?? this.x, props.y ?? this.y);

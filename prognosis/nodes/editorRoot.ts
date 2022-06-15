@@ -3,36 +3,59 @@ import { Key, Keyboard } from "../keyboard.js";
 import { Root } from "./root.js";
 import { Project } from "../project.js";
 import { Runtime } from "../runtime.js";
+import { icon, variable } from "./node.js";
+import { Point } from "../data/point.js";
 
-export class DebugRoot extends Root {
+export enum EditorRootState {
+	Editing = "Editing",
+	Running = "Running",
+	Stopped = "Stopped",
+}
+
+@icon("prism-outline")
+export class EditorRoot extends Root {
 	cameraSpeed: number = 100;
 	gridColor: Color = Color.rgba(1, 1, 1, 0.8);
 	gridSize: number = 100;
 	showGrid: boolean = false;
+	state: EditorRootState = EditorRootState.Editing;
+
+	editorUpdate() {}
 
 	_update() {
+		if (this.state !== EditorRootState.Editing) {
+			return super._update();
+		}
+		let dx = 0;
+		let dy = 0;
 		if (Keyboard.keyDown(Key.Up)) {
-			this.camera.y -= Runtime.dt * this.cameraSpeed;
+			dy -= 1;
 		}
 		if (Keyboard.keyDown(Key.Down)) {
-			this.camera.y += Runtime.dt * this.cameraSpeed;
+			dy += 1;
 		}
 		if (Keyboard.keyDown(Key.Left)) {
-			this.camera.x -= Runtime.dt * this.cameraSpeed;
+			dx -= 1;
 		}
 		if (Keyboard.keyDown(Key.Right)) {
-			this.camera.x += Runtime.dt * this.cameraSpeed;
+			dx += 1;
 		}
+		this.camera.position = this.camera.position.add(
+			new Point(dx, dy).normalized().mul(this.cameraSpeed).mul(Runtime.dt)
+		);
 		if (Keyboard.keyDown(Key.Dash)) {
 			this.camera.zoom *= 1 - Runtime.dt;
 		}
 		if (Keyboard.keyDown(Key.Equals)) {
 			this.camera.zoom *= 1 + Runtime.dt;
 		}
-		this._debugUpdate();
+		this._editorUpdate();
 	}
 
 	_render(context: CanvasRenderingContext2D): void {
+		if (this.state !== EditorRootState.Editing) {
+			return super._render(context);
+		}
 		const w = Project.graphics.width;
 		const h = Project.graphics.height;
 		context.clearRect(0, 0, w, h);
@@ -41,7 +64,7 @@ export class DebugRoot extends Root {
 		context.scale(this.camera.zoom, this.camera.zoom);
 		context.rotate(this.camera.rotation);
 		const zOrderedChildren = this.children.slice().sort((a, b) => a.z - b.z);
-		zOrderedChildren.forEach((child) => child._debugRender(context));
+		zOrderedChildren.forEach((child) => child._editorRender(context));
 		if (this.showGrid) {
 			const w = Project.graphics.width;
 			const h = Project.graphics.height;

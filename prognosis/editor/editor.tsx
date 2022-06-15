@@ -2,7 +2,6 @@ import {
 	LayoutConstants,
 	LayoutConstraints,
 	EditorState,
-	RuntimeState,
 } from "./editorState.js";
 import { Explorer } from "./explorer.js";
 import { Gutter } from "./gutter.js";
@@ -20,7 +19,7 @@ export function Editor() {
 		const keyEvent = event as KeyboardEvent;
 		// Redo
 		if (keyEvent.key === "z" && keyEvent.metaKey && keyEvent.shiftKey) {
-			if (EditorState.runtimeState === RuntimeState.Editable) {
+			if (EditorState.editable) {
 				EditorState.redo();
 			}
 			keyEvent.stopPropagation();
@@ -29,7 +28,7 @@ export function Editor() {
 		}
 		// Undo
 		if (keyEvent.key === "z" && keyEvent.metaKey) {
-			if (EditorState.runtimeState === RuntimeState.Editable) {
+			if (EditorState.editable) {
 				EditorState.undo();
 			}
 			keyEvent.stopPropagation();

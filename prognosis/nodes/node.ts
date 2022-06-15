@@ -193,6 +193,7 @@ export class Node {
 	}
 
 	set x(x: number) {
+		throw new Error("Stahp");
 		this.localX = x - (this.#parent?.x ?? 0);
 	}
 
@@ -360,7 +361,7 @@ export class Node {
 
 	// Debug lifecycle methods
 
-	_debugUpdate() {
+	_editorUpdate() {
 		const preUpdate: Node[] = [];
 		const postUpdate: Node[] = [];
 		this.#children.forEach((child) => {
@@ -372,14 +373,14 @@ export class Node {
 		});
 		preUpdate.sort((a, b) => b.priority - a.priority);
 		postUpdate.sort((a, b) => b.priority - a.priority);
-		preUpdate.forEach((child) => child._debugUpdate());
+		preUpdate.forEach((child) => child._editorUpdate());
 		if (this.debugUpdate !== undefined) {
 			this.debugUpdate();
 		}
-		postUpdate.forEach((child) => child._debugUpdate());
+		postUpdate.forEach((child) => child._editorUpdate());
 	}
 
-	_debugRender(context: CanvasRenderingContext2D) {
+	_editorRender(context: CanvasRenderingContext2D) {
 		const preRender: Node[] = [];
 		const postRender: Node[] = [];
 		this.#children.forEach((child) => {
@@ -392,13 +393,13 @@ export class Node {
 		preRender.sort((a, b) => a.z - b.z);
 		postRender.sort((a, b) => a.z - b.z);
 		context.translate(this.localX, this.localY);
-		preRender.forEach((child) => child._debugRender(context));
+		preRender.forEach((child) => child._editorRender(context));
 		if (this.debugRender !== undefined) {
 			this.debugRender(context);
 		} else if (this.render !== undefined) {
 			this.render(context);
 		}
-		postRender.forEach((child) => child._debugRender(context));
+		postRender.forEach((child) => child._editorRender(context));
 		context.translate(-this.localX, -this.localY);
 	}
 

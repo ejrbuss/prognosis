@@ -1,9 +1,10 @@
+import { icon, Node, variable } from "./node.js";
 import { Camera } from "../data/camera.js";
 import { Project } from "../project.js";
-import { Node } from "./node.js";
 
+@icon("prism-outline")
 export class Root extends Node {
-	camera: Camera = new Camera();
+	@variable(Camera) camera: Camera = new Camera();
 
 	_render(context: CanvasRenderingContext2D) {
 		const w = Project.graphics.width;

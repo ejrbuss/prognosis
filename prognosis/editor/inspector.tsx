@@ -10,7 +10,7 @@ import {
 	Variable,
 } from "../nodes/node.js";
 import { EditorApi } from "./editorApi.js";
-import { EditorState, RuntimeState } from "./editorState.js";
+import { EditorState } from "./editorState.js";
 import { Empty } from "./empty.js";
 import { useInterval, useRerender } from "./reactUtil.js";
 import { Icon } from "./icon.js";
@@ -194,7 +194,7 @@ function InspectBoolean({
 					medium
 					icon="ellipse"
 					className="checkbox"
-					disabled={EditorState.runtimeState !== RuntimeState.Editable}
+					disabled={!EditorState.editable}
 					selected={value}
 					onClick={() => setValue(!value)}
 				/>
@@ -216,7 +216,7 @@ function InspectNumber({
 			<div className="property-value">
 				<input
 					type="number"
-					disabled={EditorState.runtimeState !== RuntimeState.Editable}
+					disabled={!EditorState.editable}
 					value={focused ? valueRef.current : value}
 					onChange={(event) => {
 						valueRef.current = event.target.value;
@@ -246,7 +246,7 @@ function InspectString({
 			<div className="property-value">
 				<input
 					type="text"
-					disabled={EditorState.runtimeState !== RuntimeState.Editable}
+					disabled={!EditorState.editable}
 					value={value}
 					onChange={(event) => setValue(event.target.value)}
 				/>
@@ -262,7 +262,7 @@ function InspectEnum<Enum>(variable: EnumVariable<Enum>) {
 				<div className="property-name">{name}</div>
 				<div className="property-value">
 					<select
-						disabled={EditorState.runtimeState !== RuntimeState.Editable}
+						disabled={!EditorState.editable}
 						value={variable.keyOf(value)}
 						onChange={(event) => setValue(variable.valueOf(event.target.value))}
 					>
@@ -304,7 +304,7 @@ function InspectColor({
 							className="hidden"
 							type="color"
 							ref={colorRef}
-							disabled={EditorState.runtimeState !== RuntimeState.Editable}
+							disabled={!EditorState.editable}
 							value={value.hex.substring(0, 7)}
 							onChange={(event) => {
 								const hex = parseInt(event.target.value.substring(1), 0x10);
@@ -322,7 +322,7 @@ function InspectColor({
 						min={0}
 						max={1}
 						step={1 / 255}
-						disabled={EditorState.runtimeState !== RuntimeState.Editable}
+						disabled={!EditorState.editable}
 						value={value.alpha}
 						onChange={(event) =>
 							setValue(value.with({ alpha: event.target.valueAsNumber }))

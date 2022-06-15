@@ -5,7 +5,7 @@ import { SceneResource } from "../resources/sceneResource.js";
 import { Runtime } from "../runtime.js";
 import { Signal } from "../signal.js";
 import { EditorApi } from "./editorApi.js";
-import { DebugRoot } from "../nodes/debugRoot.js";
+import { EditorRoot, EditorRootState } from "../nodes/editorRoot.js";
 import { Root } from "../nodes/root.js";
 
 const MaxHistorySize = 1000;
@@ -19,13 +19,6 @@ export enum Tool {
 	Translate = "Translation",
 	Scale = "Scale",
 	Rotate = "Rotate",
-}
-
-export enum RuntimeState {
-	Empty = "Empty",
-	Editable = "Editable",
-	Running = "Running",
-	Paused = "Paused",
 }
 
 export const LayoutConstants = {
@@ -56,8 +49,7 @@ const EditorStateClass = class EditorState {
 	#store: EditorStore;
 	#history: UndoableAction[] = [];
 	#historyLocation: number = 0;
-	#root: Root;
-	#debugRoot: DebugRoot = new DebugRoot("Root");
+	#editorRoot: EditorRoot = new EditorRoot("Root");
 	#layoutConstraints: LayoutConstraints = {
 		desiredInspectorWidth: 300,
 		desiredExplorerWidth: 300,
@@ -69,18 +61,16 @@ const EditorStateClass = class EditorState {
 	#expandedNodes: Map<Node, boolean> = new Map();
 	#selectedTool: Tool = Tool.Translate;
 	#lockGrid: boolean = false;
-	#runtimeState: RuntimeState = RuntimeState.Empty;
 
 	updates: Signal = new Signal();
 
 	constructor() {
-		this.#root = Runtime.root;
-		this.#debugRoot.cameraSpeed = Project.graphics.width / 3;
-		this.#debugRoot.gridSize = 100;
+		this.#editorRoot.cameraSpeed = Project.graphics.width / 3;
+		this.#editorRoot.gridSize = 100;
 		this.#store = new Store("prognosis.editor.store", {
 			layoutConstraints: this.#layoutConstraints,
 			expandedNodePaths: [],
-			gridSize: this.#debugRoot.gridSize,
+			gridSize: this.#editorRoot.gridSize,
 		});
 		this.updates.connect(() => {
 			this.#store.value = {
@@ -90,20 +80,24 @@ const EditorStateClass = class EditorState {
 				expandedNodePaths: Array.from(this.#expandedNodes).map(
 					([node, expanded]) => [node.path, expanded]
 				),
-				gridSize: this.#debugRoot.gridSize,
+				gridSize: this.#editorRoot.gridSize,
 			};
 			this.#store.save();
 		});
-		Runtime.root = this.#debugRoot;
+		Runtime.root = this.#editorRoot;
 		this.load().then(() => setTimeout(() => Runtime.start()));
 	}
 
 	get editorRoot(): Node {
-		return this.#debugRoot;
+		return this.#editorRoot;
 	}
 
 	get layoutConstraints(): LayoutConstraints {
 		return { ...this.#layoutConstraints };
+	}
+
+	get sceneLoaded(): boolean {
+		return this.#scene !== undefined;
 	}
 
 	get selectedNode(): Node | undefined {
@@ -123,22 +117,28 @@ const EditorStateClass = class EditorState {
 	}
 
 	get showGrid(): boolean {
-		return this.#debugRoot.showGrid;
+		return this.#editorRoot.showGrid;
 	}
 
 	get gridSize(): number {
-		return this.#debugRoot.gridSize;
+		return this.#editorRoot.gridSize;
 	}
 
-	get runtimeState(): RuntimeState {
-		return this.#runtimeState;
+	get editable(): boolean {
+		return (
+			this.sceneLoaded && this.#editorRoot.state === EditorRootState.Editing
+		);
+	}
+
+	get editorRootState(): EditorRootState {
+		return this.#editorRoot.state;
 	}
 
 	async load() {
 		const store = this.#store.value;
 		this.#layoutConstraints = store.layoutConstraints;
 		this.#sceneUrl = store.sceneUrl;
-		this.#debugRoot.gridSize = store.gridSize;
+		this.#editorRoot.gridSize = store.gridSize;
 		if (store.sceneUrl !== undefined) {
 			this.#scene = await SceneResource.load(store.sceneUrl);
 			this.reset();
@@ -146,11 +146,8 @@ const EditorStateClass = class EditorState {
 	}
 
 	saveSceneChanges() {
-		if (
-			this.#runtimeState === RuntimeState.Editable &&
-			this.#sceneUrl !== undefined
-		) {
-			this.#scene = SceneResource.fromNodes(this.#debugRoot.children);
+		if (this.editorRootState === EditorRootState.Editing && this.#sceneUrl) {
+			this.#scene = SceneResource.fromNodes(this.#editorRoot.children);
 			EditorApi.save(this.#sceneUrl, SceneResource.toStore(this.#scene));
 		}
 	}
@@ -251,47 +248,40 @@ const EditorStateClass = class EditorState {
 	}
 
 	toggleShowGrid() {
-		this.#debugRoot.showGrid = !this.showGrid;
+		this.#editorRoot.showGrid = !this.showGrid;
 		this.updates.send();
 	}
 
 	resizeGrid(gridSize: number) {
-		if (this.#debugRoot.gridSize === gridSize) {
+		if (this.#editorRoot.gridSize === gridSize) {
 			return;
 		}
-		this.#debugRoot.gridSize = gridSize;
+		this.#editorRoot.gridSize = gridSize;
 		this.updates.send();
 	}
 
 	play() {
-		this.#scene = SceneResource.fromNodes(this.#debugRoot.children);
-		this.#runtimeState = RuntimeState.Running;
-		this.#root.addAll(Runtime.root.children);
-		Runtime.root = this.#root;
+		this.#scene = SceneResource.fromNodes(this.#editorRoot.children);
+		this.#editorRoot.state = EditorRootState.Running;
 		this.updates.send();
 	}
 
 	stop() {
-		this.#runtimeState = RuntimeState.Paused;
-		this.#debugRoot.addAll(Runtime.root.children);
-		Runtime.root = this.#debugRoot;
-		this.updates.send();
+		this.#editorRoot.state = EditorRootState.Stopped;
 	}
 
 	reset() {
-		Runtime.root = this.#debugRoot;
-		this.#debugRoot.removeAll();
+		Runtime.root = this.#editorRoot = new EditorRoot("Root");
 		this.#selectedNode = undefined;
 		this.#expandedNodes.clear();
-		this.#runtimeState = RuntimeState.Empty;
 		if (this.#scene !== undefined) {
-			this.#debugRoot.addAll(this.#scene.toNodes());
-			this.#runtimeState = RuntimeState.Editable;
+			this.#editorRoot.addAll(this.#scene.toNodes());
 			const store = this.#store.value;
 			if (store.selectedNodePath !== undefined) {
 				this.#selectedNode = Runtime.findByPath(store.selectedNodePath);
 			}
 			for (const [path, expanded] of store.expandedNodePaths) {
+				console.log(path);
 				const node = Runtime.findByPath(path);
 				if (node !== undefined) {
 					this.#expandedNodes.set(node, expanded);

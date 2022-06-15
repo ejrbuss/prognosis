@@ -2,22 +2,21 @@ import { Node } from "../nodes/node.js";
 import { SceneResource } from "../resources/sceneResource.js";
 import { Runtime } from "../runtime.js";
 import { EditorApi } from "./editorApi.js";
-import { EditorState, RuntimeState } from "./editorState.js";
+import { EditorState } from "./editorState.js";
 import { Empty } from "./empty.js";
 import { useInterval, classNames } from "./reactUtil.js";
 import { Icon } from "./icon.js";
+import { EditorRootState } from "../nodes/editorRoot.js";
 
 export function Explorer() {
 	useInterval(100);
 	const [nodeType, setNodeType] = React.useState("Node");
 	const [filterValue, setFilterValue] = React.useState("");
-	const nodeVisibilty: Record<string, boolean> = {};
 	const nodeTypes = Object.keys(Node.Metadata).sort();
-	const explorerRoot =
-		EditorState.runtimeState === RuntimeState.Running
-			? Runtime.root
-			: EditorState.editorRoot;
-	filterNode(explorerRoot, filterValue.toLowerCase(), nodeVisibilty);
+	const visibleNodes = findVisibleNodes(
+		Runtime.root,
+		filterValue.toLowerCase()
+	);
 	const sceneFileRef = React.useRef<HTMLInputElement>(null);
 	return (
 		<div className="explorer" style={{ gridRow: "span 4" }}>
@@ -52,7 +51,7 @@ export function Explorer() {
 					button
 					title="Add Node"
 					icon="add-outline"
-					disabled={EditorState.runtimeState !== RuntimeState.Editable}
+					disabled={EditorState.editable}
 					onClick={() => {
 						const parent = EditorState.selectedNode ?? EditorState.editorRoot;
 						const child = new (Node.metadataFor(nodeType).type)();
@@ -90,7 +89,11 @@ export function Explorer() {
 					<Icon large className="input-icon" icon="search-outline" />
 				</div>
 			</div>
-			{EditorState.runtimeState === RuntimeState.Empty ? (
+			{EditorState.sceneLoaded ? (
+				<div className="nodes" onMouseDown={() => EditorState.selectNode()}>
+					<NodeTree node={Runtime.root} depth={0} visibleNodes={visibleNodes} />
+				</div>
+			) : (
 				<React.Fragment>
 					<Empty
 						icon="folder-open-outline"
@@ -98,17 +101,6 @@ export function Explorer() {
 					/>
 					<div className="spacer" style={{ height: "38px" }} />
 				</React.Fragment>
-			) : (
-				<div className="nodes" onMouseDown={() => EditorState.selectNode()}>
-					{explorerRoot.children.map((childNode, index) => (
-						<NodeTree
-							key={index}
-							node={childNode}
-							depth={0}
-							nodeVisibility={nodeVisibilty}
-						/>
-					))}
-				</div>
 			)}
 		</div>
 	);
@@ -117,13 +109,13 @@ export function Explorer() {
 type NodeTreeProps = {
 	node: Node;
 	depth: number;
-	nodeVisibility: Record<string, boolean>;
+	visibleNodes: Set<Node>;
 };
 
-function NodeTree({ node, depth, nodeVisibility }: NodeTreeProps) {
+function NodeTree({ node, depth, visibleNodes }: NodeTreeProps) {
 	const [dragging, setDragging] = React.useState(false);
 	const [over, setOver] = React.useState(false);
-	if (!nodeVisibility[node.path]) {
+	if (!visibleNodes.has(node)) {
 		return <React.Fragment />;
 	}
 	const selected = EditorState.selectedNode === node;
@@ -133,7 +125,7 @@ function NodeTree({ node, depth, nodeVisibility }: NodeTreeProps) {
 		: "chevron-forward-outline";
 	return (
 		<ul
-			draggable={EditorState.runtimeState === RuntimeState.Editable}
+			draggable={EditorState.editorRootState == EditorRootState.Editing}
 			onDragStart={() => setDragging(true)}
 			onDragEnd={() => setDragging(false)}
 		>
@@ -170,7 +162,7 @@ function NodeTree({ node, depth, nodeVisibility }: NodeTreeProps) {
 					event.stopPropagation();
 				}}
 				onKeyDown={async (event) => {
-					if (EditorState.runtimeState !== RuntimeState.Editable) {
+					if (EditorState.editable) {
 						return;
 					}
 					if (event.key === "c" && event.metaKey) {
@@ -247,7 +239,7 @@ function NodeTree({ node, depth, nodeVisibility }: NodeTreeProps) {
 							<NodeTree
 								node={child}
 								depth={depth + 1}
-								nodeVisibility={nodeVisibility}
+								visibleNodes={visibleNodes}
 							/>
 						</li>
 					))
@@ -258,17 +250,19 @@ function NodeTree({ node, depth, nodeVisibility }: NodeTreeProps) {
 	);
 }
 
-function filterNode(
-	node: Node,
-	filterValue: string,
-	nodeVisiblity: Record<string, boolean>
-): boolean {
-	const childAdded = node.children.reduce(
-		(added, childNode) =>
-			filterNode(childNode, filterValue, nodeVisiblity) || added,
-		false
-	);
-	let visible = childAdded || node.name.toLowerCase().includes(filterValue);
-	nodeVisiblity[node.path] = visible;
-	return visible;
+function findVisibleNodes(root: Node, filter: string): Set<Node> {
+	const visibleNodes = new Set([root]);
+	function recurse(node: Node): boolean {
+		const childVisible = node.children.reduce(
+			(acc, child) => recurse(child) || acc,
+			false
+		);
+		if (childVisible || node.name.toLowerCase().includes(filter)) {
+			visibleNodes.add(node);
+			return true;
+		}
+		return false;
+	}
+	recurse(root);
+	return visibleNodes;
 }

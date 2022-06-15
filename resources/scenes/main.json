@@ -36,7 +36,7 @@
             "type": "Text",
             "variables": {
                 "x": -600,
-                "y": -320,
+                "y": 0,
                 "z": 0,
                 "priority": 0,
                 "text": "Text",

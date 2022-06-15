@@ -26,6 +26,9 @@ const RuntimeClass = class Runtime {
 		}
 		const name = path.substring(0, seperator);
 		if (name === this.root.name) {
+			if (path.length === name.length + 1) {
+				return this.root;
+			}
 			return this.root.findByPath(path.substring(seperator + 1));
 		}
 	}

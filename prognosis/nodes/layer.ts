@@ -19,7 +19,7 @@ export class Layer extends Node {
 		context.restore();
 	}
 
-	_debugRender(context: CanvasRenderingContext2D) {
+	_editorRender(context: CanvasRenderingContext2D) {
 		const render = this.children.sort((a, b) => a.z - b.z);
 		context.save();
 		if (this.fixed) {
@@ -29,7 +29,7 @@ export class Layer extends Node {
 			context.translate(camera.x, camera.y);
 		}
 		context.translate(this.localX, this.localY);
-		render.forEach((child) => child._debugRender(context));
+		render.forEach((child) => child._editorRender(context));
 		context.restore();
 	}
 }

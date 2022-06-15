@@ -1,4 +1,5 @@
-import { EditorState, RuntimeState, Tool } from "./editorState.js";
+import { EditorRootState } from "../nodes/editorRoot.js";
+import { EditorState, Tool } from "./editorState.js";
 import { Icon } from "./icon.js";
 
 export function Toolbar() {
@@ -58,8 +59,8 @@ export function Toolbar() {
 				button
 				large
 				disabled={
-					EditorState.runtimeState !== RuntimeState.Editable &&
-					EditorState.runtimeState !== RuntimeState.Paused
+					EditorState.editorRootState !== EditorRootState.Editing &&
+					EditorState.editorRootState !== EditorRootState.Stopped
 				}
 				onClick={() => EditorState.play()}
 				title="Play"
@@ -68,7 +69,7 @@ export function Toolbar() {
 			<Icon
 				button
 				large
-				disabled={EditorState.runtimeState !== RuntimeState.Running}
+				disabled={EditorState.editorRootState !== EditorRootState.Running}
 				onClick={() => EditorState.stop()}
 				title="Stop"
 				icon="stop-outline"
@@ -77,8 +78,8 @@ export function Toolbar() {
 				button
 				large
 				disabled={
-					EditorState.runtimeState !== RuntimeState.Running &&
-					EditorState.runtimeState !== RuntimeState.Paused
+					EditorState.editorRootState !== EditorRootState.Running &&
+					EditorState.editorRootState !== EditorRootState.Stopped
 				}
 				onClick={() => EditorState.reset()}
 				title="Reset"
