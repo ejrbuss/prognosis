@@ -13,7 +13,7 @@ export class Layer extends Node {
 			context.scale(1 / camera.zoom, 1 / camera.zoom);
 			context.translate(camera.x, camera.y);
 		}
-		context.translate(this.localX, this.localY);
+		context.translate(this.x, this.y);
 		this.children
 			.sort((a, b) => a.z - b.z)
 			.forEach((child) => child._render(context));
@@ -28,7 +28,7 @@ export class Layer extends Node {
 			context.scale(1 / camera.zoom, 1 / camera.zoom);
 			context.translate(camera.x, camera.y);
 		}
-		context.translate(this.localX, this.localY);
+		context.translate(this.x, this.y);
 		this.children
 			.sort((a, b) => a.z - b.z)
 			.forEach((child) => child._debugRender(context, debugProps));

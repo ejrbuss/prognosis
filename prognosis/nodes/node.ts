@@ -159,8 +159,8 @@ export class Node {
 	#name: string;
 	#parent?: Node;
 	#children: Node[] = [];
-	localX: number = 0;
-	localY: number = 0;
+	x: number = 0;
+	y: number = 0;
 	z: number = 0;
 	priority: number = 0;
 
@@ -196,31 +196,6 @@ export class Node {
 		return this.#children.slice();
 	}
 
-	get x(): number {
-		return this.localX + (this.#parent?.x ?? 0);
-	}
-
-	set x(x: number) {
-		this.localX = x - (this.#parent?.x ?? 0);
-	}
-
-	get y(): number {
-		return this.localY + (this.#parent?.y ?? 0);
-	}
-
-	set y(y: number) {
-		this.localY = y - (this.#parent?.y ?? 0);
-	}
-
-	get localPosition(): Point {
-		return new Point(this.localX, this.localY);
-	}
-
-	set localPosition(localPosition: Point) {
-		this.localX = localPosition.x;
-		this.localY = localPosition.y;
-	}
-
 	get position(): Point {
 		return new Point(this.x, this.y);
 	}
@@ -228,6 +203,14 @@ export class Node {
 	set position(position: Point) {
 		this.x = position.x;
 		this.y = position.y;
+	}
+
+	get screenPosition(): Point {
+		throw new Error("TODO implement me");
+	}
+
+	get worldPosition(): Point {
+		throw new Error("TODO implement me");
 	}
 
 	findByPath(path: string): Node | undefined {
@@ -326,13 +309,13 @@ export class Node {
 		});
 		preRender.sort((a, b) => a.z - b.z);
 		postRender.sort((a, b) => a.z - b.z);
-		context.translate(this.localX, this.localY);
+		context.translate(this.x, this.y);
 		preRender.forEach((child) => child._render(context));
 		if (this.render !== undefined) {
 			this.render(context);
 		}
 		postRender.forEach((child) => child._render(context));
-		context.translate(-this.localX, -this.localY);
+		context.translate(-this.x, -this.y);
 	}
 
 	// Runtime hooks
@@ -364,7 +347,7 @@ export class Node {
 		});
 		preRender.sort((a, b) => a.z - b.z);
 		postRender.sort((a, b) => a.z - b.z);
-		context.translate(this.localX, this.localY);
+		context.translate(this.x, this.y);
 		preRender.forEach((child) => child._debugRender(context, debugProps));
 		if (this.debugRender !== undefined) {
 			this.debugRender(context, debugProps);
@@ -372,7 +355,7 @@ export class Node {
 			this.render(context);
 		}
 		postRender.forEach((child) => child._debugRender(context, debugProps));
-		context.translate(-this.localX, -this.localY);
+		context.translate(-this.x, -this.y);
 	}
 
 	// Debug hooks

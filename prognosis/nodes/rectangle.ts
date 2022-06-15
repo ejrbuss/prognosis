@@ -7,10 +7,10 @@ export class Rectangle extends Node {
 	@variable(Number) width: number = 100;
 	@variable(Number) height: number = 100;
 	@variable(Color) fillColor: Color = Color.Black;
+	@variable(Boolean) fill: Boolean = true;
 	@variable(Color) strokeColor: Color = Color.Black;
-	fill: Boolean = true;
-	stroke: Boolean = true;
-	lineWidth: number = 1;
+	@variable(Number) strokeWidth: number = 1;
+	@variable(Boolean) stroke: Boolean = false;
 
 	render(context: CanvasRenderingContext2D) {
 		context.save();
@@ -23,7 +23,7 @@ export class Rectangle extends Node {
 		}
 		if (this.stroke) {
 			context.strokeStyle = this.strokeColor.hex;
-			context.lineWidth = this.lineWidth;
+			context.lineWidth = this.strokeWidth;
 			context.strokeRect(-w / 2, -h / 2, w, h);
 		}
 		context.restore();
