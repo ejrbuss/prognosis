@@ -77,7 +77,9 @@ export class SceneResource {
 			const node = new metadata.type(nodeData.name);
 			for (const name in nodeData.variables) {
 				const variable = metadata.variables[name];
-				(node as any)[name] = variable.fromStore(nodeData.variables[name]);
+				if (variable !== undefined) {
+					(node as any)[name] = variable.fromStore(nodeData.variables[name]);
+				}
 			}
 			nodeData.children.forEach((childIndex) => node.add(recurse(childIndex)));
 			return node;

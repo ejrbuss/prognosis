@@ -1,7 +1,7 @@
 {
     "rootNodes": [
         0,
-        3
+        4
     ],
     "nodeData": [
         {
@@ -28,7 +28,8 @@
                 "priority": 0
             },
             "children": [
-                2
+                2,
+                3
             ]
         },
         {
@@ -39,13 +40,29 @@
                 "y": -320,
                 "z": 0,
                 "priority": 0,
-                "text": "Text",
+                "text": "Hello",
                 "fontFamily": "monospace",
                 "fontSize": 24,
                 "fontStyle": "Normal",
                 "fontWeight": "Normal",
                 "alignment": "Left",
                 "color": 139252991
+            },
+            "children": []
+        },
+        {
+            "name": "Rectangle",
+            "type": "Rectangle",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": 0,
+                "rotation": 0,
+                "width": 1280,
+                "height": 720,
+                "fillColor": 255,
+                "strokeColor": -65281
             },
             "children": []
         },
@@ -60,8 +77,8 @@
                 "fixed": false
             },
             "children": [
-                4,
-                5
+                5,
+                6
             ]
         },
         {
@@ -73,9 +90,10 @@
                 "z": -1,
                 "priority": 0,
                 "rotation": 0,
-                "width": 1280,
+                "width": 1000,
                 "height": 720,
-                "color": 1273474047
+                "fillColor": 1710010879,
+                "strokeColor": 255
             },
             "children": []
         },
@@ -90,7 +108,12 @@
                 "color": 410289919
             },
             "children": [
-                6
+                7,
+                9,
+                11,
+                13,
+                15,
+                17
             ]
         },
         {
@@ -103,19 +126,6 @@
                 "priority": 0,
                 "speed": 300,
                 "cameraFollowSpeed": 2
-            },
-            "children": [
-                7
-            ]
-        },
-        {
-            "name": "SpriteAnimation",
-            "type": "SpriteAnimation",
-            "variables": {
-                "x": 0,
-                "y": 0,
-                "z": 0,
-                "priority": -50
             },
             "children": [
                 8
@@ -136,6 +146,176 @@
                 "scale": {
                     "x": 1,
                     "y": 1
+                },
+                "rotation": 0
+            },
+            "children": []
+        },
+        {
+            "name": "Enemy",
+            "type": "Enemy",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": 0,
+                "speed": 100
+            },
+            "children": [
+                10
+            ]
+        },
+        {
+            "name": "Sprite",
+            "type": "Sprite",
+            "variables": {
+                "x": 300,
+                "y": -70,
+                "z": 0,
+                "priority": 0,
+                "origin": {
+                    "x": 0,
+                    "y": 0
+                },
+                "scale": {
+                    "x": 0.5,
+                    "y": 0.5
+                },
+                "rotation": 0
+            },
+            "children": []
+        },
+        {
+            "name": "Enemy (1)",
+            "type": "Enemy",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": 0,
+                "speed": 100
+            },
+            "children": [
+                12
+            ]
+        },
+        {
+            "name": "Sprite",
+            "type": "Sprite",
+            "variables": {
+                "x": 400,
+                "y": -90,
+                "z": 0,
+                "priority": 0,
+                "origin": {
+                    "x": 0,
+                    "y": 0
+                },
+                "scale": {
+                    "x": 0.5,
+                    "y": 0.5
+                },
+                "rotation": 0
+            },
+            "children": []
+        },
+        {
+            "name": "Enemy  (2)",
+            "type": "Enemy",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": 0,
+                "speed": 100
+            },
+            "children": [
+                14
+            ]
+        },
+        {
+            "name": "Sprite",
+            "type": "Sprite",
+            "variables": {
+                "x": 338,
+                "y": -3,
+                "z": 0,
+                "priority": 0,
+                "origin": {
+                    "x": 0,
+                    "y": 0
+                },
+                "scale": {
+                    "x": 0.5,
+                    "y": 0.5
+                },
+                "rotation": 0
+            },
+            "children": []
+        },
+        {
+            "name": "Enemy   (3)",
+            "type": "Enemy",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": 0,
+                "speed": 100
+            },
+            "children": [
+                16
+            ]
+        },
+        {
+            "name": "Sprite",
+            "type": "Sprite",
+            "variables": {
+                "x": 370,
+                "y": -180,
+                "z": 0,
+                "priority": 0,
+                "origin": {
+                    "x": 0,
+                    "y": 0
+                },
+                "scale": {
+                    "x": 0.5,
+                    "y": 0.5
+                },
+                "rotation": 0
+            },
+            "children": []
+        },
+        {
+            "name": "Enemy    (4)",
+            "type": "Enemy",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": 0,
+                "speed": 100
+            },
+            "children": [
+                18
+            ]
+        },
+        {
+            "name": "Sprite",
+            "type": "Sprite",
+            "variables": {
+                "x": 215,
+                "y": -140,
+                "z": 0,
+                "priority": 0,
+                "origin": {
+                    "x": 0,
+                    "y": 0
+                },
+                "scale": {
+                    "x": 0.5,
+                    "y": 0.5
                 },
                 "rotation": 0
             },
