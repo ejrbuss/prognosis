@@ -11,15 +11,10 @@ To install nvm run
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
 ```
 
-Then use latest version of node and npm with
+To install the use the latest version of node run
 
 ```sh
-nvm use node
-```
-
-Verify with (should be >= v17.0.1)
-```sh
-node -v
+nvm install node
 ```
 
 ## Project Setup
