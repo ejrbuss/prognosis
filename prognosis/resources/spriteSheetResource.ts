@@ -9,7 +9,7 @@ const FrameSchema = Schema.object({
 		w: Schema.number,
 		h: Schema.number,
 	}),
-	duration: Schema.number,
+	duration: Schema.optional(Schema.number),
 });
 
 const SpriteSheetSchema = Schema.object({
@@ -18,8 +18,8 @@ const SpriteSheetSchema = Schema.object({
 
 export class Frame {
 	constructor(
-		readonly duration: number,
-		readonly spriteResource: SpriteResource
+		readonly spriteResource: SpriteResource,
+		readonly duration?: number
 	) {}
 }
 
@@ -44,7 +44,7 @@ export class SpriteSheetResource {
 						frame.frame.h
 					);
 					const frameSpriteResource = new SpriteResource(bitmap);
-					frames[frameKey] = new Frame(frame.duration, frameSpriteResource);
+					frames[frameKey] = new Frame(frameSpriteResource, frame.duration);
 				})
 			);
 			return new SpriteSheetResource(frames);

@@ -60,7 +60,8 @@
                 "fixed": false
             },
             "children": [
-                4
+                4,
+                5
             ]
         },
         {
@@ -75,6 +76,68 @@
                 "width": 1280,
                 "height": 720,
                 "color": 1273474047
+            },
+            "children": []
+        },
+        {
+            "name": "Game",
+            "type": "Game",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": 0,
+                "color": 410289919
+            },
+            "children": [
+                6
+            ]
+        },
+        {
+            "name": "Player",
+            "type": "Player",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": 0,
+                "speed": 300,
+                "cameraFollowSpeed": 2
+            },
+            "children": [
+                7
+            ]
+        },
+        {
+            "name": "SpriteAnimation",
+            "type": "SpriteAnimation",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": -50
+            },
+            "children": [
+                8
+            ]
+        },
+        {
+            "name": "Sprite",
+            "type": "Sprite",
+            "variables": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "priority": 0,
+                "origin": {
+                    "x": 0,
+                    "y": 0
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1
+                },
+                "rotation": 0
             },
             "children": []
         }

@@ -46,8 +46,8 @@ The following are other useful commands
 ```sh
 npm run test    # Run unit tests
 npm run clean   # Remove all build artifacts
-npm run serve   # Run a deve server (localhost:8080)
-npm run dev     # Run a deve server (localhost:8080) and watch for file updates
+npm run serve   # Run a dev server (localhost:8080)
+npm run dev     # Run a dev server (localhost:8080) and watch for file updates
 npm run release # Create a release (release.zip)
 ```
 

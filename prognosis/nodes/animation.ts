@@ -3,7 +3,7 @@ import { icon, Node } from "./node.js";
 import { Sprite } from "./sprite.js";
 
 @icon("videocam-outline")
-export class Animation extends Node {
+export class SpriteAnimation extends Node {
 	spriteComponent?: Sprite;
 	spriteSheetResource?: SpriteSheetResource;
 	frameKey?: string;
@@ -14,6 +14,17 @@ export class Animation extends Node {
 	}
 
 	update() {
+		if (
+			this.spriteComponent !== undefined &&
+			this.spriteSheetResource !== undefined &&
+			this.frameKey !== undefined
+		) {
+			this.spriteComponent.spriteResource =
+				this.spriteSheetResource.frames[this.frameKey]?.spriteResource;
+		}
+	}
+
+	debugUpdate() {
 		if (
 			this.spriteComponent !== undefined &&
 			this.spriteSheetResource !== undefined &&

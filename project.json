@@ -4,6 +4,6 @@
 	"graphics": {
 		"width": 1280,
 		"height": 720,
-		"antiAliasing": false
+		"antiAliasing": true
 	}
 }
