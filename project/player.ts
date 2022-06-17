@@ -12,34 +12,22 @@ enum direction {
 	SW,
 }
 
-enum dirState {
-	left = 0,
-	right,
-	up,
-	down,
-	NW,
-	NE,
-	SE,
-	SW,
-}
-
 export class Player extends Node {
 	sprite?: Sprite;
 	spriteSheetResource?: SpriteSheetResource;
-	dirState: dirState = dirState.left;
-	@variable(Number) direction: direction = direction.NE;
+	@variable(Number) spriteDirection: direction = direction.NE;
 	@variable(Number) speed: number = 100;
 	@variable(Number) cameraFollowSpeed: number = 5;
 
-	async childrenChange() {
+	async childrenChanged() {
 		this.sprite = this.get(Sprite);
 		if (this.sprite) {
-			const spriteSheetResource = await SpriteSheetResource.load(
+			this.spriteSheetResource = await SpriteSheetResource.load(
 				"/resources/demo/characters/mouse.json",
 				"/resources/demo/characters/mouse.png"
 			);
 			this.sprite.spriteResource = Object.values(
-				spriteSheetResource.frames
+				this.spriteSheetResource.frames
 			)[0]?.spriteResource;
 		}
 	}
@@ -47,20 +35,6 @@ export class Player extends Node {
 	update() {
 		this.updatePositionAndDirection();
 		this.updateSpriteFrame();
-		// this.updateCamera();
-	}
-
-	async childrenChanged() {
-		this.sprite = this.get(Sprite);
-		if (this.sprite) {
-			// Load a sprite sheet
-			this.spriteSheetResource = await SpriteSheetResource.load(
-				"/resources/demo/characters/mouse.json",
-				"/resources/demo/characters/mouse.png"
-			);
-			this.sprite.spriteResource =
-				this.spriteSheetResource.frames["NE-0000.png"]?.spriteResource;
-		}
 	}
 
 	/*** PRIVATE FUNCTIONS ***/
@@ -88,134 +62,56 @@ export class Player extends Node {
 			this.y += this.speed * Runtime.dt;
 		}
 
+		// Update Player Direction
 		dx = this.x - dx;
 		dy = this.y - dy;
 
-		// Update Player Direction
-		let dir = new Point(dx, dy);
-		let angle = dir.angle;
-		let newState;
-
 		if (dx != 0 || dy != 0) {
-			if (angle == 0) {
-				newState = dirState.right;
-			} else if (angle == Math.PI) {
-				newState = dirState.left;
-			} else if (angle == Math.PI / 2) {
-				newState = dirState.down;
-			} else if (angle == -(Math.PI / 2)) {
-				newState = dirState.up;
-			} else if (angle >= 0 && angle < Math.PI / 2) {
-				newState = dirState.SE;
-			} else if (angle >= Math.PI / 2 && angle < Math.PI) {
-				newState = dirState.SW;
-			} else if (angle <= 0 && angle > -(Math.PI / 2)) {
-				newState = dirState.NE;
-			} else {
-				//if (angle <= -(Math.PI / 2) && angle > -(Math.PI))
-				newState = dirState.NW;
-			}
-
-			this.updateDirectionFromState(newState);
+			this.updateSpriteDirectionFromMove(new Point(dx, dy));
 		}
 	}
 
-	private updateDirectionFromState(newState: dirState) {
-		switch (this.direction) {
-			case direction.NW:
-				switch (newState) {
-					case dirState.right:
-					case dirState.NE:
-						this.direction = direction.NE;
-						break;
-					case dirState.down:
-					case dirState.SW:
-						this.direction = direction.SW;
-						break;
-					case dirState.SE:
-						this.direction = direction.SE;
-						break;
-					case dirState.left:
-					case dirState.up:
-					case dirState.NW:
-					default:
-						// do nothing
-						break;
-				}
-				break;
-
-			case direction.NE:
-				switch (newState) {
-					case dirState.left:
-					case dirState.NW:
-						this.direction = direction.NW;
-						break;
-					case dirState.down:
-					case dirState.SE:
-						this.direction = direction.SE;
-						break;
-					case dirState.SW:
-						this.direction = direction.SW;
-						break;
-					case dirState.up:
-					case dirState.right:
-					case dirState.NE:
-					default:
-						// do nothing
-						break;
-				}
-				break;
-
-			case direction.SE:
-				switch (newState) {
-					case dirState.left:
-					case dirState.SW:
-						this.direction = direction.SW;
-						break;
-					case dirState.NW:
-						this.direction = direction.NW;
-						break;
-					case dirState.up:
-					case dirState.NE:
-						this.direction = direction.NE;
-						break;
-					case dirState.down:
-					case dirState.right:
-					case dirState.SE:
-					default:
-						// do nothing
-						break;
-				}
-				break;
-
-			case direction.SW:
-				switch (newState) {
-					case dirState.right:
-					case dirState.SE:
-						this.direction = direction.SE;
-						break;
-					case dirState.up:
-					case dirState.NW:
-						this.direction = direction.NW;
-						break;
-					case dirState.NE:
-						this.direction = direction.NE;
-						break;
-					case dirState.down:
-					case dirState.left:
-					case dirState.SW:
-					default:
-						// do nothing
-						break;
-				}
-				break;
+	private updateSpriteDirectionFromMove(move: Point) {
+		if (move.isDirSouthEast()) {
+			this.spriteDirection = direction.SE;
+		} else if (move.isDirSouthWest()) {
+			this.spriteDirection = direction.SW;
+		} else if (move.isDirNorthEast()) {
+			this.spriteDirection = direction.NE;
+		} else if (move.isDirNorthWest()) {
+			this.spriteDirection = direction.NW;
+		} else if (move.isDirEast()) {
+			if (this.spriteDirection == direction.SW) {
+				this.spriteDirection = direction.SE;
+			} else if (this.spriteDirection == direction.NW) {
+				this.spriteDirection = direction.NE;
+			} // else do nothing
+		} else if (move.isDirWest()) {
+			if (this.spriteDirection == direction.SE) {
+				this.spriteDirection = direction.SW;
+			} else if (this.spriteDirection == direction.NE) {
+				this.spriteDirection = direction.NW;
+			} // else do nothing
+		} else if (move.isDirSouth()) {
+			if (this.spriteDirection == direction.NW) {
+				this.spriteDirection = direction.SW;
+			} else if (this.spriteDirection == direction.NE) {
+				this.spriteDirection = direction.SE;
+			} // else do nothing
+		} else {
+			// if (move.isDirNorth())
+			if (this.spriteDirection == direction.SW) {
+				this.spriteDirection = direction.NW;
+			} else if (this.spriteDirection == direction.SE) {
+				this.spriteDirection = direction.NE;
+			} // else do nothing
 		}
 	}
 
 	private updateSpriteFrame() {
 		if (this.sprite && this.spriteSheetResource) {
 			// Depending on direction the player is moving, update the sprite
-			switch (this.direction) {
+			switch (this.spriteDirection) {
 				case direction.NW:
 					this.sprite.spriteResource =
 						this.spriteSheetResource.frames["NW-0000.png"]?.spriteResource;

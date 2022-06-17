@@ -125,4 +125,29 @@ export class Point implements Tweenable<Point> {
 	min(point: Point): Point {
 		return new Point(Math.min(this.x, point.x), Math.min(this.y, point.y));
 	}
+
+	isDirNorth(): Boolean {
+		return this.angle == -(Math.PI / 2);
+	}
+	isDirSouth(): Boolean {
+		return this.angle == Math.PI / 2;
+	}
+	isDirEast(): Boolean {
+		return this.angle == 0;
+	}
+	isDirWest(): Boolean {
+		return this.angle == Math.PI;
+	}
+	isDirNorthWest(): Boolean {
+		return this.angle < -(Math.PI / 2) && this.angle > -Math.PI;
+	}
+	isDirNorthEast(): Boolean {
+		return this.angle < 0 && this.angle > -(Math.PI / 2);
+	}
+	isDirSouthWest(): Boolean {
+		return this.angle > Math.PI / 2 && this.angle < Math.PI;
+	}
+	isDirSouthEast(): Boolean {
+		return this.angle > 0 && this.angle < Math.PI / 2;
+	}
 }
