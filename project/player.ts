@@ -12,9 +12,24 @@ enum direction {
 	SW,
 }
 
+type InputState = {
+	moveLeft: boolean;
+	moveRight: boolean;
+	moveUp: boolean;
+	moveDown: boolean;
+	attack: boolean;
+};
+
 export class Player extends Node {
 	sprite?: Sprite;
 	spriteSheetResource?: SpriteSheetResource;
+	inputState: InputState = {
+		moveLeft: false,
+		moveRight: false,
+		moveUp: false,
+		moveDown: false,
+		attack: false,
+	};
 	@variable(Number) spriteDirection: direction = direction.NE;
 	@variable(Number) speed: number = 100;
 	@variable(Number) cameraFollowSpeed: number = 5;
@@ -33,32 +48,36 @@ export class Player extends Node {
 	}
 
 	update() {
+		this.getUserInput();
 		this.updatePositionAndDirection();
 		this.updateSpriteFrame();
 	}
 
 	/*** PRIVATE FUNCTIONS ***/
 
+	private getUserInput() {
+		this.inputState.moveLeft = Keyboard.keyDown(Key.Left);
+		this.inputState.moveRight = Keyboard.keyDown(Key.Right);
+		this.inputState.moveUp = Keyboard.keyDown(Key.Up);
+		this.inputState.moveDown = Keyboard.keyDown(Key.Down);
+		this.inputState.attack = Keyboard.keyPressed(Key.Space);
+	}
+
 	private updatePositionAndDirection() {
 		let dx = this.x;
 		let dy = this.y;
 
-		let keyLeft = Keyboard.keyDown(Key.Left);
-		let keyRight = Keyboard.keyDown(Key.Right);
-		let keyUp = Keyboard.keyDown(Key.Up);
-		let keyDown = Keyboard.keyDown(Key.Down);
-
 		// Update Node Position
-		if (keyLeft) {
+		if (this.inputState.moveLeft) {
 			this.x -= this.speed * Runtime.dt;
 		}
-		if (keyRight) {
+		if (this.inputState.moveRight) {
 			this.x += this.speed * Runtime.dt;
 		}
-		if (keyUp) {
+		if (this.inputState.moveUp) {
 			this.y -= this.speed * Runtime.dt;
 		}
-		if (keyDown) {
+		if (this.inputState.moveDown) {
 			this.y += this.speed * Runtime.dt;
 		}
 
@@ -113,20 +132,24 @@ export class Player extends Node {
 			// Depending on direction the player is moving, update the sprite
 			switch (this.spriteDirection) {
 				case direction.NW:
-					this.sprite.spriteResource =
-						this.spriteSheetResource.frames["NW-0000.png"]?.spriteResource;
+					this.sprite.spriteResource = this.inputState.attack
+						? this.spriteSheetResource.frames["NW-0007.png"]?.spriteResource
+						: this.spriteSheetResource.frames["NW-0000.png"]?.spriteResource;
 					break;
 				case direction.NE:
-					this.sprite.spriteResource =
-						this.spriteSheetResource.frames["NE-0000.png"]?.spriteResource;
+					this.sprite.spriteResource = this.inputState.attack
+						? this.spriteSheetResource.frames["NE-0007.png"]?.spriteResource
+						: this.spriteSheetResource.frames["NE-0000.png"]?.spriteResource;
 					break;
 				case direction.SE:
-					this.sprite.spriteResource =
-						this.spriteSheetResource.frames["SE-0000.png"]?.spriteResource;
+					this.sprite.spriteResource = this.inputState.attack
+						? this.spriteSheetResource.frames["SE-0007.png"]?.spriteResource
+						: this.spriteSheetResource.frames["SE-0000.png"]?.spriteResource;
 					break;
 				case direction.SW:
-					this.sprite.spriteResource =
-						this.spriteSheetResource.frames["SW-0000.png"]?.spriteResource;
+					this.sprite.spriteResource = this.inputState.attack
+						? this.spriteSheetResource.frames["SW-0007.png"]?.spriteResource
+						: this.spriteSheetResource.frames["SW-0000.png"]?.spriteResource;
 					break;
 				default:
 					// No change
