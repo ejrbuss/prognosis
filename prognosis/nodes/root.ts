@@ -51,6 +51,7 @@ export class Root extends Node {
 		context.translate(hw - this.camera.x, hh - this.camera.y);
 		context.scale(this.camera.zoom, this.camera.zoom);
 		context.rotate(this.camera.rotation);
+		context.fillStyle = Color.Magenta.hex;
 		super._render(context);
 		context.restore();
 	}

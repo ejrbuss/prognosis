@@ -1,4 +1,4 @@
-import { Tool } from "../nodes/node.js";
+import { Tool } from "../nodes/game-node.js";
 import { Editor } from "./editor.js";
 import { Icon } from "./icon.js";
 

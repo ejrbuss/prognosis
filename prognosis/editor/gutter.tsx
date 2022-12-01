@@ -1,41 +1,57 @@
-import { classNames, useEventListener } from "./reactUtil.js";
+import { jsx, Component } from "./imd.js";
+import { classNames } from "./imd-utils.js";
 
-export type GutterProps = {
+type GutterProps = {
 	horizontal?: boolean;
 	vertical?: boolean;
-	onDrag: (delta: number) => any;
+	onDrag?: (delta: number) => any;
 };
 
-export function Gutter({ horizontal, vertical, onDrag }: GutterProps) {
-	const [selected, setSelected] = React.useState(false);
-	React.useEffect(() => {
-		const listener = (event: MouseEvent) => {
-			if (selected) {
-				if (event.buttons === 0) {
-					setSelected(false);
-				} else {
-					event.stopPropagation();
-					if (horizontal) {
-						onDrag(event.movementY);
-					} else {
-						onDrag(event.movementX);
-					}
-				}
+export class Gutter extends Component<GutterProps> {
+	static idCount = 0;
+	selected: boolean = false;
+	dx: number = 0;
+	dy: number = 0;
+	id = Gutter.idCount++;
+
+	mousemove = (event: MouseEvent) => {
+		if (this.selected) {
+			if (event.buttons === 0) {
+				this.selected = false;
+			} else {
+				event.stopPropagation();
+				this.dx += event.movementX;
+				this.dy += event.movementY;
 			}
-		};
-		window.addEventListener("mousemove", listener);
-		return () => window.removeEventListener("mousemove", listener);
-	});
-	return (
-		<div
-			tabIndex={0}
-			className={classNames("gutter", {
-				horizontal,
-				vertical,
-				selected,
-			})}
-		>
-			<div onMouseDown={() => setSelected(true)} className="bar" />
-		</div>
-	);
+		}
+	};
+
+	componentWillMount(): void {
+		window.addEventListener("mousemove", this.mousemove);
+	}
+
+	componentWillUnmount(): void {
+		window.removeEventListener("mousemove", this.mousemove);
+	}
+
+	render({ horizontal, vertical, onDrag }: GutterProps) {
+		if (onDrag !== undefined && this.selected) {
+			onDrag(horizontal ? this.dy : this.dx);
+		}
+		this.dx = 0;
+		this.dy = 0;
+		return (
+			<div
+				tabIndex={0}
+				className={classNames("gutter", {
+					selected: this.selected,
+					horizontal,
+					vertical,
+				})}
+				onmousedown={() => (this.selected = true)}
+			>
+				<div className="bar" />
+			</div>
+		);
+	}
 }

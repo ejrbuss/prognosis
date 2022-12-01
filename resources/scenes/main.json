@@ -131,7 +131,7 @@
                 "y": 0,
                 "z": 0,
                 "priority": 0,
-                "direction": 1,
+                "spriteDirection": 1,
                 "speed": 200,
                 "cameraFollowSpeed": 5
             },

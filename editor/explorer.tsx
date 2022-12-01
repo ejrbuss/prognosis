@@ -1,4 +1,4 @@
-import { Node } from "../nodes/node.js";
+import { GameNode } from "../nodes/game-node.js";
 import { Runtime } from "../runtime.js";
 import { EditorApi } from "./editorApi.js";
 import { Editor } from "./editor.js";
@@ -10,7 +10,7 @@ export function Explorer() {
 	useInterval(100);
 	const [nodeType, setNodeType] = React.useState("Node");
 	const [filterValue, setFilterValue] = React.useState("");
-	const nodeTypes = Object.keys(Node.Metadata).sort();
+	const nodeTypes = Object.keys(GameNode.Metadata).sort();
 	const visibleNodes = findVisibleNodes(
 		Runtime.root,
 		filterValue.toLowerCase()
@@ -53,7 +53,7 @@ export function Explorer() {
 					onClick={() => {
 						const parent = Editor.selectedNode;
 						if (parent !== undefined) {
-							const child = new (Node.metadataFor(nodeType).type)();
+							const child = new (GameNode.metadataFor(nodeType).type)();
 							Editor.undoable({
 								action: () => {
 									parent.add(child);
@@ -107,9 +107,9 @@ export function Explorer() {
 }
 
 type NodeTreeProps = {
-	node: Node;
+	node: GameNode;
 	depth: number;
-	visibleNodes: Set<Node>;
+	visibleNodes: Set<GameNode>;
 };
 
 function NodeTree({ node, depth, visibleNodes }: NodeTreeProps) {
@@ -187,7 +187,7 @@ function NodeTree({ node, depth, visibleNodes }: NodeTreeProps) {
 					icon={expandIcon}
 					style={{ opacity: node.children.length > 0 ? 1 : 0 }}
 				/>
-				<Icon className="node-icon" icon={Node.metadataFor(node).icon} />
+				<Icon className="node-icon" icon={GameNode.metadataFor(node).icon} />
 				<div className="node-name">{node.name}</div>
 			</div>
 			{expanded ? (
@@ -209,9 +209,9 @@ function NodeTree({ node, depth, visibleNodes }: NodeTreeProps) {
 	);
 }
 
-function findVisibleNodes(root: Node, filter: string): Set<Node> {
+function findVisibleNodes(root: GameNode, filter: string): Set<GameNode> {
 	const visibleNodes = new Set([root]);
-	function recurse(node: Node): boolean {
+	function recurse(node: GameNode): boolean {
 		const childVisible = node.children.reduce(
 			(acc, child) => recurse(child) || acc,
 			false

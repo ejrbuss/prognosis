@@ -1,5 +1,5 @@
 import { Store } from "../data/store.js";
-import { Node, Tool } from "../nodes/node.js";
+import { GameNode, Tool } from "../nodes/game-node.js";
 import { SceneResource } from "../resources/sceneResource.js";
 import { Runtime } from "../runtime.js";
 import { Signal } from "../signal.js";
@@ -49,7 +49,7 @@ const EditorClass = class Editor {
 	};
 	#sceneUrl?: string;
 	#scene?: SceneResource;
-	#expandedNodes: Map<Node, boolean> = new Map();
+	#expandedNodes: Map<GameNode, boolean> = new Map();
 	#editable: boolean = true;
 	#lockGrid: boolean = false;
 
@@ -96,7 +96,7 @@ const EditorClass = class Editor {
 		return Runtime.debugOptions.selectedTool;
 	}
 
-	get selectedNode(): Node | undefined {
+	get selectedNode(): GameNode | undefined {
 		return Runtime.debugOptions.selectedNode;
 	}
 
@@ -104,7 +104,7 @@ const EditorClass = class Editor {
 		return Runtime.debugOptions.lockToGrid;
 	}
 
-	nodeExpanded(node: Node): boolean {
+	nodeExpanded(node: GameNode): boolean {
 		return this.#expandedNodes.get(node) ?? false;
 	}
 
@@ -207,12 +207,12 @@ const EditorClass = class Editor {
 		this.reset();
 	}
 
-	selectNode(node?: Node) {
+	selectNode(node?: GameNode) {
 		Runtime.debugOptions.selectedNode = node;
 		this.updates.send();
 	}
 
-	toggleNodeExpanded(node: Node) {
+	toggleNodeExpanded(node: GameNode) {
 		this.#expandedNodes.set(node, !this.nodeExpanded(node));
 		this.updates.send();
 	}
@@ -279,13 +279,13 @@ const EditorClass = class Editor {
 		this.updates.send();
 	}
 
-	copyNode(node: Node) {
+	copyNode(node: GameNode) {
 		const scene = SceneResource.fromNode(node);
 		const storeableScene = SceneResource.toStore(scene);
 		navigator.clipboard.writeText(JSON.stringify(storeableScene));
 	}
 
-	removeNode(node: Node) {
+	removeNode(node: GameNode) {
 		console.log("here!");
 		const parent = node.parent;
 		if (parent !== undefined) {
@@ -302,12 +302,12 @@ const EditorClass = class Editor {
 		}
 	}
 
-	cutNode(node: Node) {
+	cutNode(node: GameNode) {
 		this.copyNode(node);
 		this.removeNode(node);
 	}
 
-	async pasteNode(parent: Node) {
+	async pasteNode(parent: GameNode) {
 		const storeableScene = JSON.parse(await navigator.clipboard.readText());
 		const scene = SceneResource.fromStore(storeableScene);
 		const node = await scene.toNode();

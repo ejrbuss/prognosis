@@ -4,11 +4,11 @@ import { Point } from "../data/point.js";
 import {
 	BooleanVariable,
 	EnumVariable,
-	Node,
+	GameNode,
 	NumberVariable,
 	StringVariable,
 	Variable,
-} from "../nodes/node.js";
+} from "../nodes/game-node.js";
 import { EditorApi } from "./editorApi.js";
 import { Editor } from "./editor.js";
 import { Empty } from "./empty.js";
@@ -17,7 +17,7 @@ import { Icon } from "./icon.js";
 import { SpriteResource } from "../resources/spriteResource.js";
 
 type InspectorState = {
-	node: Node | undefined;
+	node: GameNode | undefined;
 	nodeComponents: React.FunctionComponent<{}>[];
 	typeComponents: React.FunctionComponent<{}>[];
 };
@@ -41,7 +41,7 @@ export function Inspector() {
 		};
 		if (newState.node !== undefined) {
 			const node = newState.node;
-			const metadata = Node.metadataFor(node);
+			const metadata = GameNode.metadataFor(node);
 			for (const name in metadata.variables) {
 				const variable = metadata.variables[name];
 				let InspectComponent!: VariableInspector<any>;
@@ -122,14 +122,14 @@ export function Inspector() {
 }
 
 type NodeTitleProps = {
-	node: Node;
+	node: GameNode;
 };
 
 function NodeTitle({ node }: NodeTitleProps) {
 	const focusValue = React.useRef(node.name);
 	const [nodeName, setNodeName] = React.useState("");
 	const [focus, setFocus] = React.useState(false);
-	const metadata = Node.metadataFor(node);
+	const metadata = GameNode.metadataFor(node);
 	return (
 		<div className="row">
 			<Icon

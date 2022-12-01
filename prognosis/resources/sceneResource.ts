@@ -83,12 +83,6 @@ export class SceneResource implements Resource {
 			for (const name in nodeData.variables) {
 				const variable = metadata.variables[name];
 				if (variable !== undefined) {
-					if (name === "x") {
-						console.log(
-							variable,
-							await variable.fromStore(nodeData.variables[name])
-						);
-					}
 					(node as any)[name] = await variable.fromStore(
 						nodeData.variables[name]
 					);

@@ -1,0 +1,29 @@
+.toolbar {
+	display: flex;
+	flex-flow: row;
+	align-items: center;
+	justify-content: center;
+}
+
+.toolbar .spacer {
+	display: inline-block;
+	height: 32px;
+	margin-left: 12px;
+	margin-right: 12px;
+	border-left: 1.5px solid var(--background-lighter-2);
+}
+
+.toolbar .grid-size {
+	display: inline-block;
+	margin: 4px;
+	width: 28px;
+	text-align: right;
+}
+
+.toolbar .unit {
+	display: inline-block;
+	margin: 4px;
+	font-size: 12px;
+	font-family: var(--font-family);
+	color: var(--color);
+}

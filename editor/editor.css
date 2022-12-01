@@ -1,0 +1,99 @@
+@import "/prognosis/editor/empty.css";
+@import "/prognosis/editor/explorer.css";
+@import "/prognosis/editor/gutter.css";
+@import "/prognosis/editor/icon.css";
+@import "/prognosis/editor/inspector.css";
+@import "/prognosis/editor/preview.css";
+@import "/prognosis/editor/toolbar.css";
+@import "/prognosis/editor/variables.css";
+
+body {
+	margin: 0;
+	padding: 0;
+	color: var(--color-fg);
+	background-color: var(--color-bg);
+	font-size: var(--font-size-md);
+	font-family: var(--font-family);
+}
+
+*:focus {
+    outline: none;
+}
+
+h1 {
+	height: 48px;
+	line-height: 48px;
+	margin: 0 var(--gap-lg);
+	color: var(--color-fg-subtle);
+	font-size: var(--font-size-md);
+	font-weight: normal;
+	user-select: none;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+    margin: 0;
+	text-align: right;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+}
+
+input[type=range] {
+	padding-left: 0;
+	padding-right: 0;
+}
+
+input,
+select {
+	border: none;
+	padding: 8px;
+	font-size: var(--font-size-sm);
+	color: var(--color-fg);
+	background-color: var(--background-lighter-1);
+	border-radius: 4px;
+}
+
+input.with-icon {
+	padding-right: calc(2 * var(--font-size-md));
+}
+
+input:focus,
+select:focus {
+	outline: 1px solid var(--accent);
+	background-color: var(--background-lighter-2);
+}
+
+input:disabled,
+select:disabled {
+	color: var(--color-subtle);
+}
+
+input:read-only:focus,
+select:read-only:focus {
+	outline: none;
+	background-color: var(--background-lighter-1);
+}
+
+input::placeholder {
+	color: var(--color-subtle) !important;
+}
+
+.hidden {
+	width: 0;
+	height: 0;
+	padding: 0;
+	margin: 0;
+	opacity: 0;
+}
+
+.editor {
+	display: grid;
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+}

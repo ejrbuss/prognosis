@@ -1,5 +1,4 @@
 .inspector {
-	grid-row: span 4;
 	flex-grow: 1;
 	display: flex;
 	flex-flow: column;

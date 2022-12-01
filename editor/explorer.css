@@ -1,5 +1,4 @@
 .explorer {
-	grid-row: span 4;
 	display: flex;
 	flex-flow: column;
 }

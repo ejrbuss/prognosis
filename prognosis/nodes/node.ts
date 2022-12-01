@@ -1,3 +1,4 @@
+import { Color } from "../data/color.js";
 import { Point } from "../data/point.js";
 import { Schema } from "../data/schema.js";
 import { JsonData } from "../data/store.js";
@@ -156,44 +157,45 @@ export class Node {
 		return nodeMetadata as NodeMetadata;
 	}
 
-	#name: string;
-	#parent?: Node;
-	#children: Node[] = [];
+	protected _name: string;
+	protected _parent?: Node;
+	protected _children: Node[] = [];
+
 	x: number = 0;
 	y: number = 0;
 	z: number = 0;
 	priority: number = 0;
 
 	constructor(name?: string) {
-		this.#name = name ?? this.constructor.name;
+		this._name = name ?? this.constructor.name;
 	}
 
 	get name(): string {
-		return this.#name;
+		return this._name;
 	}
 
 	set name(name: string) {
-		const parent = this.#parent;
+		const parent = this._parent;
 		if (parent !== undefined) {
 			while (
-				parent.#children.some((child) => child !== this && child.name === name)
+				parent._children.some((child) => child !== this && child.name === name)
 			) {
 				name = incrementName(name);
 			}
 		}
-		this.#name = name;
+		this._name = name;
 	}
 
 	get path(): string {
-		return `${this.#parent?.path ?? ""}${this.name}/`;
+		return `${this._parent?.path ?? ""}${this.name}/`;
 	}
 
 	get parent(): Node | undefined {
-		return this.#parent;
+		return this._parent;
 	}
 
 	get children(): Node[] {
-		return this.#children.slice();
+		return this._children.slice();
 	}
 
 	get position(): Point {
@@ -219,7 +221,7 @@ export class Node {
 			throw new Error(`Invalid  Node path "${path}"!`);
 		}
 		const name = path.substring(0, seperator);
-		const child = this.#children.find((child) => child.name === name);
+		const child = this._children.find((child) => child.name === name);
 		if (path.length === name.length + 1) {
 			return child;
 		}
@@ -227,17 +229,17 @@ export class Node {
 	}
 
 	add(node: Node) {
-		if (node.#parent === this) {
+		if (node._parent === this) {
 			return;
 		}
-		if (node.#parent !== undefined) {
-			node.#parent.remove(node);
+		if (node._parent !== undefined) {
+			node._parent.remove(node);
 		}
-		while (this.#children.some((child) => child.name === node.name)) {
+		while (this._children.some((child) => child.name === node.name)) {
 			node.name = incrementName(node.name);
 		}
-		node.#parent = this;
-		this.#children.push(node);
+		node._parent = this;
+		this._children.push(node);
 		if (this.childrenChanged !== undefined) {
 			this.childrenChanged();
 		}
@@ -248,10 +250,10 @@ export class Node {
 	}
 
 	remove(node: Node): boolean {
-		const index = this.#children.indexOf(node);
+		const index = this._children.indexOf(node);
 		if (index !== -1) {
-			(this.#children as Node[]).splice(index, 1);
-			node.#parent = undefined;
+			(this._children as Node[]).splice(index, 1);
+			node._parent = undefined;
 			if (this.childrenChanged !== undefined) {
 				this.childrenChanged();
 			}
@@ -265,13 +267,13 @@ export class Node {
 	}
 
 	has(nodeType: typeof Node): boolean {
-		return this.#children.some((child) => child instanceof nodeType);
+		return this._children.some((child) => child instanceof nodeType);
 	}
 
 	get<NodeType extends typeof Node>(
 		nodeType: NodeType
 	): InstanceType<NodeType> | undefined {
-		return this.#children.find(
+		return this._children.find(
 			(child) => child instanceof nodeType
 		) as InstanceType<NodeType>;
 	}
@@ -300,7 +302,7 @@ export class Node {
 	_render(context: CanvasRenderingContext2D) {
 		const preRender: Node[] = [];
 		const postRender: Node[] = [];
-		this.#children.forEach((child) => {
+		this._children.forEach((child) => {
 			if (child.z < 0) {
 				preRender.push(child);
 			} else {
@@ -315,7 +317,6 @@ export class Node {
 			this.render(context);
 		}
 		postRender.forEach((child) => child._render(context));
-		context.translate(-this.x, -this.y);
 	}
 
 	// Runtime hooks
@@ -338,7 +339,7 @@ export class Node {
 	_debugRender(context: CanvasRenderingContext2D, debugProps: DebugOptions) {
 		const preRender: Node[] = [];
 		const postRender: Node[] = [];
-		this.#children.forEach((child) => {
+		this._children.forEach((child) => {
 			if (child.z < 0) {
 				preRender.push(child);
 			} else {

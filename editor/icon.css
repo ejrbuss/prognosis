@@ -1,0 +1,48 @@
+.icon {
+	color: var(--color);
+	padding: 0.2em;
+	height: 1em;
+	width: 1em;
+	line-height: 1em;
+}
+
+.icon.small {
+	font-size: 16px;
+}
+
+.icon.medium {
+	font-size: 18px;
+}
+
+.icon.large {
+	font-size: 22px;
+}
+
+.icon.button {
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.icon.button:hover {
+	background-color: var(--background-lighter-1);
+}
+
+.icon.button.selected {
+	color: var(--accent);
+}
+
+.icon.disabled,
+.icon.disabled:hover {
+	color: var(--color-subtle);
+	pointer-events: none;
+	cursor: auto;
+	background: none;
+}
+
+.icon ion-icon {
+	pointer-events: none;
+}
+
+.input-icon {
+	margin-left: -1.5em;
+}

@@ -11,6 +11,9 @@
 
 <body>
 	<main id="root"></main>
+	<!-- React -->
+	<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+	<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 	<!-- Icons -->
 	<script type="module" crossorigin src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
 	<!-- Prognosis -->
@@ -19,19 +22,16 @@
 		import { Project } from "/prognosis/project.js";
 		import { Runtime } from "/prognosis/runtime.js";
 		import { SceneResource } from "/prognosis/resources/sceneResource.js";
-		import { jsx, render } from "/prognosis/editor/imd.js";
-		import { Editor } from "/prognosis/editor/editor.js";
 
 		// Load project files
 		await import("/prognosis/load.js");
 
+		const { Layout } = await import("/prognosis/editor/layout.js");
+
 		// Start the editor
-		render(jsx(Editor, null), document.getElementById("root"));
+		ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Layout, null));
 
 		window.Prognosis = { Runtime };
-
-		// Start the engine
-		Runtime.start();
 	</script>
 </body>
 

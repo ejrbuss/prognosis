@@ -23,7 +23,7 @@
 		// Load project files
 		await import("/prognosis/load.js");
 
-		Runtime.root.addAll((await SceneResource.load(Project.initialScene)).toNodes());
+		Runtime.root = await (await SceneResource.load(Project.initialScene)).toNode();
 		Runtime.start();
 	</script>
 </body>
